@@ -1,73 +1,67 @@
-# React + TypeScript + Vite
+# SkillSplit 💸
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SkillSplit is a premium, high-performance web application designed to simplify group expense management and financial settlements. Built with a focus on rich aesthetics and a "wow" user experience, SkillSplit goes beyond simple splitting to offer advanced debt optimization and dispute resolution.
 
-Currently, two official plugins are available:
+![SkillSplit Login](public/skillsplit_login_illustration_1776791735010.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ✨ Features
 
-## React Compiler
+- **📊 Intelligent Dashboard**: Get a bird's-eye view of your total balance, what you are owed, and what you owe across all your circles.
+- **👥 Group Management**: Organize your life into groups—whether it's a "Lahore Trip," "Roommates," or "Friends"—to keep track of shared costs effortlessly.
+- **🚀 Optimization Center**: Minimize the number of transactions required to settle up with our smart debt simplification engine.
+- **⚖️ Dispute Resolution**: A dedicated space to manage and resolve disagreements over expenses fairly.
+- **📜 Activity Log**: A complete, chronological history of every financial footprint you leave in the app.
+- **🎨 Premium UI/UX**: Crafted with modern design principles, including glassmorphism, smooth gradients, and micro-animations.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Tech Stack
 
-## Expanding the ESLint configuration
+- **Core**: React 18 + TypeScript
+- **Build System**: Vite
+- **Icons**: Lucide React
+- **Styling**: Custom CSS Design System (Vanilla CSS)
+- **Routing**: React Router 6
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🚀 Getting Started
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Prerequisites
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- [npm](https://www.npmjs.com/) (comes with Node.js)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd skillsplit
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+4. **Build for production**
+   ```bash
+   npm run build
+   ```
+
+## 🏗️ Project Structure
+
+```text
+src/
+├── assets/         # Static assets and images
+├── components/     # Reusable UI components
+├── pages/          # Full-page views
+├── App.tsx         # Main application routing
+├── index.css       # Global design system & tokens
+└── main.tsx        # Entry point
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
