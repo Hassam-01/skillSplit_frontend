@@ -1,4 +1,3 @@
-import React from 'react';
 import { Users, UserPlus, ShieldCheck, ChevronRight, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 

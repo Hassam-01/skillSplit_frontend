@@ -1,8 +1,24 @@
-import React from 'react';
 import { PlusCircle, CheckCircle, AlertCircle, UserPlus, Clock } from 'lucide-react';
 
+interface ActivityItem {
+  id: number;
+  type: string;
+  user: string;
+  action: string;
+  group?: string;
+  detail?: string;
+  amount?: string;
+  time: string;
+  icon: React.ReactNode;
+}
+
+interface ActivityGroup {
+  day: string;
+  items: ActivityItem[];
+}
+
 const ActivityLog = () => {
-  const activities = [
+  const activities: ActivityGroup[] = [
     { 
       day: 'Today',
       items: [

@@ -1,4 +1,3 @@
-import React from 'react';
 import { AlertTriangle, CheckCircle2, MessageSquare, ShieldAlert } from 'lucide-react';
 
 const Disputes = () => {
