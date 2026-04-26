@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  /* Core Colors */
+  --color-primary: #004c4c;
+  --color-primary-container: #006666;
+  --color-on-primary: #ffffff;
+  
+  --color-surface: #fbfbe2;
+  --color-surface-container-low: #f5f5dc;
+  --color-surface-container-high: #eaead1;
+  --color-surface-container-highest: #e4e4cc;
+  --color-surface-container-lowest: #ffffff;
+  
+  --color-on-surface: #1b1d0e;
+  --color-on-surface-variant: #3f4948;
+  
+  --color-error: #ba1a1a;
+  
+  --color-tertiary-container: #874c2b;
+  --color-on-tertiary-container: #ffc8ad;
+  
+  --color-outline-variant: #bec9c8;
+
+  /* Typography */
+  --font-display: 'Epilogue', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  /* Spacing & Borders */
+  --radius-md: 0.75rem;
+  --radius-xl: 1.5rem;
+  --spacing-container: 2rem;
+}
+
+/* Global Reset & Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1.2;
+}
+
+/* Typography Utilities */
+.text-display-lg { font-size: 2rem; letter-spacing: -0.02em; }
+.text-headline-lg { font-size: 1.5rem; letter-spacing: -0.01em; }
+.text-title-lg { font-size: 1.1rem; font-weight: 600; }
+.text-body-lg { font-size: 0.9rem; color: var(--color-on-surface-variant); }
+.text-label-sm { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Surface Philosophy: No-Line Rule */
+.surface-low { background-color: var(--color-surface-container-low); }
+.surface-high { background-color: var(--color-surface-container-high); }
+.surface-highest { background-color: var(--color-surface-container-highest); }
+.surface-lowest { background-color: var(--color-surface-container-lowest); }
+
+/* Glassmorphism Overlay */
+.glass {
+  background: rgba(251, 251, 226, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Signature Gradient for CTAs */
+.btn-gradient {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%);
+  color: var(--color-on-primary);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background-color: var(--color-surface-container-highest);
+  color: var(--color-primary);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Layout Utilities */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-container);
+}
+
+.grid-asymmetric {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 3rem;
+}
+
+@media (max-width: 1024px) {
+  .grid-asymmetric {
+    grid-template-columns: 1fr;
+  }
+}
