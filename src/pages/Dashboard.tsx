@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ArrowUpRight, ArrowDownLeft, Plus } from 'lucide-react';
 import AddExpenseModal from '../components/AddExpenseModal';
 

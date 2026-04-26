@@ -1,4 +1,3 @@
-import React from 'react';
 import { Calendar, User, MoreVertical, Plus, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
