@@ -1,119 +1,81 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShieldCheck, Mail, Lock, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
+import { supabase } from '../utils/supabase';
 
 const Login = () => {
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/');
+    setLoading(true);
+    setError(null);
+    const { error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+    } else {
+      navigate('/');
+    }
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '0.875rem 1rem 0.875rem 3rem',
+    backgroundColor: 'var(--color-surface-container-low)',
+    border: '1px solid transparent', borderRadius: 'var(--radius-md)',
+    outline: 'none', fontSize: '0.9rem', transition: 'all 0.2s ease',
+    fontFamily: 'var(--font-body)',
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      backgroundColor: 'var(--color-surface)',
-      backgroundImage: 'radial-gradient(circle at 80% 20%, var(--color-surface-container-low) 0%, transparent 40%), radial-gradient(circle at 20% 80%, var(--color-surface-container-high) 0%, transparent 40%)'
-    }}>
-      <div style={{ 
-        width: '100%', 
-        maxWidth: '440px', 
-        padding: '2.5rem',
-        backgroundColor: 'var(--color-surface-container-lowest)',
-        borderRadius: 'var(--radius-xl)',
-        boxShadow: '0 20px 50px rgba(0, 76, 76, 0.05)',
-        border: '1px solid var(--color-outline-variant)'
-      }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-surface)', backgroundImage: 'radial-gradient(circle at 80% 20%, var(--color-surface-container-low) 0%, transparent 40%), radial-gradient(circle at 20% 80%, var(--color-surface-container-high) 0%, transparent 40%)' }}>
+      <div style={{ width: '100%', maxWidth: '440px', padding: '2.5rem', backgroundColor: 'var(--color-surface-container-lowest)', borderRadius: 'var(--radius-xl)', boxShadow: '0 20px 50px rgba(0, 76, 76, 0.05)', border: '1px solid var(--color-outline-variant)' }}>
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <div style={{ 
-            width: '48px', 
-            height: '48px', 
-            backgroundColor: 'var(--color-primary)', 
-            borderRadius: '12px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            margin: '0 auto 1.5rem',
-            color: 'white'
-          }}>
+          <div style={{ width: '48px', height: '48px', backgroundColor: 'var(--color-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: 'white' }}>
             <ShieldCheck size={28} />
           </div>
           <h1 className="text-headline-lg" style={{ marginBottom: '0.5rem' }}>SkillSplit</h1>
           <p className="text-body-lg">Expense Management, Simplified.</p>
         </div>
 
+        {error && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.875rem 1rem', backgroundColor: 'rgba(186,26,26,0.06)', borderRadius: 'var(--radius-md)', marginBottom: '1.25rem', color: 'var(--color-error)' }}>
+            <AlertCircle size={18} />
+            <p style={{ fontSize: '0.875rem' }}>{error}</p>
+          </div>
+        )}
+
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
-            <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Email or Phone</label>
+            <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Email</label>
             <div style={{ position: 'relative' }}>
               <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-on-surface-variant)' }} />
-              <input 
-                type="text" 
-                placeholder="ali@example.com"
-                style={{
-                  width: '100%',
-                  padding: '0.875rem 1rem 0.875rem 3rem',
-                  backgroundColor: 'var(--color-surface-container-low)',
-                  border: '1px solid transparent',
-                  borderRadius: 'var(--radius-md)',
-                  outline: 'none',
-                  fontSize: '0.9rem',
-                  transition: 'all 0.2s ease'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = 'var(--color-primary)';
-                  e.target.style.backgroundColor = 'var(--color-surface-container-lowest)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = 'transparent';
-                  e.target.style.backgroundColor = 'var(--color-surface-container-low)';
-                }}
-              />
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="ali@example.com" required style={inputStyle}
+                onFocus={e => { e.target.style.borderColor = 'var(--color-primary)'; e.target.style.backgroundColor = 'var(--color-surface-container-lowest)'; }}
+                onBlur={e => { e.target.style.borderColor = 'transparent'; e.target.style.backgroundColor = 'var(--color-surface-container-low)'; }} />
             </div>
           </div>
 
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <label className="text-label-sm">Password</label>
-              <Link to="/forgot-password" style={{ color: 'var(--color-primary)', fontWeight: '600', textDecoration: 'none', fontSize: '0.75rem' }}>
-                Forgot?
-              </Link>
             </div>
             <div style={{ position: 'relative' }}>
               <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-on-surface-variant)' }} />
-              <input 
-                type="password" 
-                placeholder="••••••••"
-                style={{
-                  width: '100%',
-                  padding: '0.875rem 1rem 0.875rem 3rem',
-                  backgroundColor: 'var(--color-surface-container-low)',
-                  border: '1px solid transparent',
-                  borderRadius: 'var(--radius-md)',
-                  outline: 'none',
-                  fontSize: '0.9rem',
-                  transition: 'all 0.2s ease'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = 'var(--color-primary)';
-                  e.target.style.backgroundColor = 'var(--color-surface-container-lowest)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = 'transparent';
-                  e.target.style.backgroundColor = 'var(--color-surface-container-low)';
-                }}
-              />
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required style={inputStyle}
+                onFocus={e => { e.target.style.borderColor = 'var(--color-primary)'; e.target.style.backgroundColor = 'var(--color-surface-container-lowest)'; }}
+                onBlur={e => { e.target.style.borderColor = 'transparent'; e.target.style.backgroundColor = 'var(--color-surface-container-low)'; }} />
             </div>
           </div>
 
           <div style={{ marginTop: '1rem' }}>
-            <button type="submit" className="btn-gradient" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '0.875rem' }}>
-              <span>Sign In</span>
-              <ArrowRight size={18} />
+            <button type="submit" className="btn-gradient" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '0.875rem' }} disabled={loading}>
+              <span>{loading ? 'Signing in…' : 'Sign In'}</span>
+              {!loading && <ArrowRight size={18} />}
             </button>
           </div>
 
