@@ -1,19 +1,26 @@
 import { useState, useEffect } from 'react';
-import { ShieldCheck, ArrowRight, Zap, Info, RefreshCw, AlertCircle, ChevronDown } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { ShieldCheck, ArrowRight, Zap, Info, RefreshCw, AlertCircle, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { useOptimization } from '../hooks/useOptimization';
 import { useGroups } from '../hooks/useGroups';
 import type { OptimizedPlanStep, Profile } from '../types/database';
 
 const OptimizationCenter = () => {
   const { groups, loading: groupsLoading } = useGroups();
+  const [searchParams] = useSearchParams();
+  const queryGroupId = searchParams.get('groupId');
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
   const { plan, loading, error, fetchLatestPlan, generatePlan, confirmPlan, settleStep } = useOptimization(selectedGroupId || undefined);
 
   useEffect(() => {
-    if (groups.length > 0 && !selectedGroupId) {
-      setSelectedGroupId(groups[0].id);
+    if (groups.length > 0) {
+      if (queryGroupId && groups.some(g => g.id === queryGroupId)) {
+        setSelectedGroupId(queryGroupId);
+      } else if (!selectedGroupId) {
+        setSelectedGroupId(groups[0].id);
+      }
     }
-  }, [groups, selectedGroupId]);
+  }, [groups, queryGroupId, selectedGroupId]);
 
   useEffect(() => {
     if (selectedGroupId) fetchLatestPlan();
@@ -21,161 +28,262 @@ const OptimizationCenter = () => {
 
   const steps = (plan?.steps ?? []) as unknown as (OptimizedPlanStep & { payer: Profile; payee: Profile })[];
   const confirmedSteps = steps.filter(s => s.settlement_id);
+  const efficiency = plan?.naive_count && plan?.naive_count > 0 
+    ? Math.round((1 - plan.optimized_count / plan.naive_count) * 100) 
+    : 0;
 
   return (
-    <div>
-      <header style={{ marginBottom: '1.25rem' }}>
-        <h2 className="text-headline-lg">Optimization Center</h2>
-        <p className="text-body-lg" style={{ maxWidth: '600px', fontSize: '0.85rem' }}>
+    <div className="container" style={{ paddingBottom: '4rem' }}>
+      <header style={{ marginBottom: '2rem' }}>
+        <h2 className="text-display-lg">Optimization Center</h2>
+        <p className="text-body-lg" style={{ maxWidth: '600px', marginTop: '0.5rem' }}>
           Minimize transactions and settle group balances efficiently through consolidated debt optimization.
         </p>
       </header>
 
       {/* Group Selector */}
-      <div style={{ marginBottom: '1.5rem', maxWidth: '320px', position: 'relative' }}>
-        <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Select Group</label>
+      <div style={{ marginBottom: '2.5rem', maxWidth: '400px', position: 'relative' }}>
+        <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.75rem', color: 'var(--color-primary)' }}>Select Active Group</label>
         {groupsLoading ? (
-          <div style={{ padding: '0.75rem 1rem', backgroundColor: 'var(--color-surface-container-low)', borderRadius: 'var(--radius-md)', color: 'var(--color-on-surface-variant)', fontSize: '0.9rem' }}>Loading…</div>
+          <div className="surface-low" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', color: 'var(--color-on-surface-variant)' }}>Loading groups…</div>
         ) : groups.length === 0 ? (
-          <div style={{ padding: '0.75rem 1rem', backgroundColor: 'var(--color-surface-container-low)', borderRadius: 'var(--radius-md)', color: 'var(--color-on-surface-variant)', fontSize: '0.9rem' }}>No groups yet. Create a group first.</div>
+          <div className="surface-low" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', color: 'var(--color-on-surface-variant)' }}>No groups found.</div>
         ) : (
-          <>
-            <select value={selectedGroupId} onChange={e => setSelectedGroupId(e.target.value)}
-              style={{ width: '100%', padding: '0.75rem 2.5rem 0.75rem 1rem', backgroundColor: 'var(--color-surface-container-low)', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.9rem', appearance: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', outline: 'none' }}>
+          <div style={{ position: 'relative' }}>
+            <select 
+              value={selectedGroupId} 
+              onChange={e => setSelectedGroupId(e.target.value)}
+              style={{ 
+                width: '100%', 
+                padding: '1rem 3rem 1rem 1.25rem', 
+                backgroundColor: 'var(--color-surface-container-low)', 
+                border: '1px solid var(--color-outline-variant)', 
+                borderRadius: 'var(--radius-md)', 
+                fontSize: '1rem', 
+                appearance: 'none', 
+                cursor: 'pointer', 
+                fontFamily: 'var(--font-body)', 
+                outline: 'none',
+                color: 'var(--color-on-surface)',
+                fontWeight: '500'
+              }}
+            >
               {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
-            <ChevronDown size={16} style={{ position: 'absolute', right: '0.75rem', bottom: '0.75rem', pointerEvents: 'none', color: 'var(--color-on-surface-variant)' }} />
-          </>
+            <ChevronDown size={20} style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-primary)' }} />
+          </div>
         )}
       </div>
 
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', backgroundColor: 'rgba(186,26,26,0.06)', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', color: 'var(--color-error)' }}>
-          <AlertCircle size={18} /><p style={{ fontSize: '0.875rem' }}>{error}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1.25rem', backgroundColor: 'var(--color-error-container)', borderRadius: 'var(--radius-md)', marginBottom: '2rem', color: 'var(--color-error)', border: '1px solid rgba(186,26,26,0.2)' }}>
+          <AlertCircle size={20} /><p style={{ fontWeight: '500' }}>{error}</p>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.5rem' }}>
+      <div className="grid-asymmetric">
         <section>
-          {/* Algorithm Status */}
-          <div className="surface-low" style={{ padding: '1.5rem', borderRadius: 'var(--radius-xl)', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          {/* Algorithm Status Card */}
+          <div className="surface-lowest" style={{ padding: '2rem', borderRadius: 'var(--radius-xl)', marginBottom: '2.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.03)', border: '1px solid var(--color-surface-container-high)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
-                <h3 className="text-title-lg">Algorithm Status</h3>
+                <h3 className="text-headline-lg">Smart Settle Algorithm</h3>
                 {plan && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#1b5e20', marginTop: '0.25rem' }}>
-                    <ShieldCheck size={16} />
-                    <span className="text-label-sm" style={{ fontSize: '0.6rem' }}>{plan.is_confirmed ? 'Confirmed' : 'Smart Settle Active'}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-success)', marginTop: '0.5rem' }}>
+                    <ShieldCheck size={18} />
+                    <span className="text-label-sm" style={{ fontSize: '0.7rem' }}>{plan.is_confirmed ? 'Plan Confirmed' : 'Analysis Complete'}</span>
                   </div>
                 )}
               </div>
               {plan && (
-                <p className="text-body-lg" style={{ fontSize: '0.85rem', color: 'var(--color-on-surface-variant)', textAlign: 'right' }}>
-                  Reducing {plan.naive_count ?? '?'} possible transactions to {plan.optimized_count ?? steps.length} direct payments.
-                </p>
+                <div style={{ textAlign: 'right' }}>
+                  <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>Efficiency Gain</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-primary)' }}>{efficiency}%</p>
+                </div>
               )}
             </div>
 
             {plan ? (
-              <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--color-on-surface-variant)', opacity: 0.4 }}>{plan.naive_count ?? '?'}</div>
-                  <p className="text-label-sm">Original</p>
-                </div>
-                <ArrowRight size={24} style={{ color: 'var(--color-outline-variant)' }} />
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '3rem', fontWeight: '800', color: 'var(--color-primary)' }}>{plan.optimized_count ?? steps.length}</div>
-                  <p className="text-label-sm" style={{ fontWeight: '700', color: 'var(--color-primary)' }}>Optimized</p>
-                </div>
-                {plan.naive_count && plan.optimized_count ? (
-                  <div style={{ flex: 1, padding: '1rem', backgroundColor: 'var(--color-surface-container-high)', borderRadius: 'var(--radius-md)', marginLeft: '1.5rem' }}>
-                    <p className="text-label-sm" style={{ color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.6rem' }}>
-                      <Zap size={14} /> Efficiency Gain
-                    </p>
-                    <p style={{ fontSize: '1.125rem', fontWeight: '700' }}>
-                      {plan.naive_count > 0 ? Math.round((1 - plan.optimized_count / plan.naive_count) * 100) : 0}% Fewer Steps
-                    </p>
+              <div style={{ backgroundColor: 'var(--color-surface)', padding: '2rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '2.5rem', fontWeight: '700', color: 'var(--color-on-surface-variant)', opacity: 0.3 }}>{plan.naive_count ?? '?'}</div>
+                    <p className="text-label-sm">Standard Path</p>
                   </div>
-                ) : null}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                    <ArrowRight size={32} style={{ color: 'var(--color-primary)', opacity: 0.5 }} />
+                    <Zap size={20} style={{ color: 'var(--color-primary)' }} />
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '4rem', fontWeight: '900', color: 'var(--color-primary)', lineHeight: 1 }}>{plan.optimized_count ?? steps.length}</div>
+                    <p className="text-label-sm" style={{ fontWeight: '700', color: 'var(--color-primary)' }}>Optimized Steps</p>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-on-surface-variant)' }}>
-                <p style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>No optimization plan generated yet for this group.</p>
+              <div style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--color-on-surface-variant)', border: '2px dashed var(--color-outline-variant)', borderRadius: 'var(--radius-md)', marginBottom: '2rem' }}>
+                <RefreshCw size={40} style={{ margin: '0 auto 1.5rem', opacity: 0.2 }} />
+                <p style={{ fontSize: '1.1rem', fontWeight: '500' }}>Ready to optimize group debts</p>
+                <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>Generate a plan to find the most efficient payment routes.</p>
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-              <button className="btn-gradient" onClick={generatePlan} disabled={loading || !selectedGroupId} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <RefreshCw size={16} /> {loading ? 'Generating…' : 'Generate New Plan'}
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <button className="btn-gradient" onClick={generatePlan} disabled={loading || !selectedGroupId} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1.5rem' }}>
+                <RefreshCw size={18} className={loading ? 'animate-spin' : ''} /> 
+                {loading ? 'Analyzing Data…' : 'Generate Optimization'}
               </button>
               {plan && !plan.is_confirmed && (
-                <button className="btn-secondary" onClick={confirmPlan} disabled={loading}>Confirm Plan</button>
+                <button className="btn-secondary" onClick={confirmPlan} disabled={loading} style={{ padding: '0.75rem 1.5rem' }}>
+                  Lock & Confirm Plan
+                </button>
               )}
             </div>
           </div>
 
-          {/* Payment Steps */}
+          {/* Payment Steps Section */}
           {steps.length > 0 && (
-            <>
-              <h3 className="text-title-lg" style={{ marginBottom: '1rem' }}>Recommended Payments</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {steps.map(step => {
+            <div style={{ animation: 'slideIn 0.4s ease-out' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h3 className="text-title-lg">Recommended Settlements</h3>
+                <span className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+                  {confirmedSteps.length} of {steps.length} Complete
+                </span>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {steps.map((step, idx) => {
                   const payer = step.payer as Profile | null;
                   const payee = step.payee as Profile | null;
                   const settled = !!step.settlement_id;
+                  
                   return (
-                    <div key={step.id} className="surface-lowest" style={{ padding: '1rem 1.5rem', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', opacity: settled ? 0.6 : 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{ textAlign: 'center' }}>
-                          <p style={{ fontWeight: '600' }}>{payer?.display_name ?? 'Unknown'}</p>
-                          <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>Payer</p>
+                    <div 
+                      key={step.id} 
+                      className="surface-lowest" 
+                      style={{ 
+                        padding: '1.25rem 1.5rem', 
+                        borderRadius: 'var(--radius-md)', 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.02)', 
+                        opacity: settled ? 0.5 : 1,
+                        borderLeft: settled ? '4px solid var(--color-success)' : '4px solid var(--color-primary)',
+                        transition: 'all 0.3s ease',
+                        flexWrap: 'wrap',
+                        gap: '1.5rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1, minWidth: '250px' }}>
+                        <div style={{ textAlign: 'center', minWidth: '80px' }}>
+                          <p style={{ fontWeight: '700', fontSize: '0.9rem' }}>{payer?.display_name ?? 'Unknown'}</p>
+                          <p className="text-label-sm" style={{ fontSize: '0.6rem', color: 'var(--color-on-surface-variant)' }}>Payer</p>
                         </div>
-                        <ArrowRight size={20} style={{ color: 'var(--color-primary)' }} />
-                        <div style={{ textAlign: 'center' }}>
-                          <p style={{ fontWeight: '600' }}>{payee?.display_name ?? 'Unknown'}</p>
-                          <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>Recipient</p>
+                        
+                        <div style={{ position: 'relative', flex: 1, display: 'flex', justifyContent: 'center' }}>
+                          <div style={{ height: '2px', width: '100%', backgroundColor: 'var(--color-surface-container-high)', position: 'absolute', top: '50%', zIndex: 0 }}></div>
+                          <div style={{ backgroundColor: 'var(--color-surface)', padding: '0 0.5rem', zIndex: 1, color: 'var(--color-primary)' }}>
+                             <ArrowRight size={18} />
+                          </div>
+                        </div>
+
+                        <div style={{ textAlign: 'center', minWidth: '80px' }}>
+                          <p style={{ fontWeight: '700', fontSize: '0.9rem' }}>{payee?.display_name ?? 'Unknown'}</p>
+                          <p className="text-label-sm" style={{ fontSize: '0.6rem', color: 'var(--color-on-surface-variant)' }}>Recipient</p>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                        <p style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--color-primary)' }}>Rs. {Number(step.amount).toLocaleString()}</p>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', justifyContent: 'flex-end', flexShrink: 0 }}>
+                        <div style={{ textAlign: 'right' }}>
+                          <p className="text-label-sm" style={{ fontSize: '0.55rem', color: 'var(--color-on-surface-variant)' }}>Settlement Amount</p>
+                          <p style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--color-primary)' }}>
+                            Rs. {Number(step.amount).toLocaleString()}
+                          </p>
+                        </div>
+                        
                         {settled ? (
-                          <span style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem', backgroundColor: 'rgba(27,94,32,0.1)', color: '#1b5e20', borderRadius: '100px', fontWeight: '600' }}>Settled</span>
+                          <div style={{ color: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '700', fontSize: '0.85rem' }}>
+                            <CheckCircle2 size={20} /> Verified
+                          </div>
                         ) : (
-                          <button className="btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={() => settleStep(step as unknown as OptimizedPlanStep)} disabled={loading}>Settle</button>
+                          <button 
+                            className="btn-gradient" 
+                            style={{ padding: '0.6rem 1.25rem', fontSize: '0.85rem', minWidth: '100px' }} 
+                            onClick={() => settleStep(step as unknown as OptimizedPlanStep)} 
+                            disabled={loading}
+                          >
+                            Pay Now
+                          </button>
                         )}
                       </div>
                     </div>
                   );
                 })}
               </div>
-            </>
+            </div>
           )}
         </section>
 
         <aside>
-          <div className="surface-high" style={{ padding: '1.5rem', borderRadius: 'var(--radius-xl)' }}>
-            <h3 className="text-title-lg" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
-              <Info size={16} /> How it works
+          <div className="surface-high" style={{ padding: '2rem', borderRadius: 'var(--radius-xl)', position: 'sticky', top: '2rem' }}>
+            <h3 className="text-title-lg" style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Info size={20} style={{ color: 'var(--color-primary)' }} /> How it works
             </h3>
-            <p className="text-body-lg" style={{ fontSize: '0.85rem', color: 'var(--color-on-surface-variant)', lineHeight: '1.6' }}>
-              Our greedy algorithm consolidates complex debts into the fewest possible payments. Net positions are preserved — only the payment paths are optimized.
+            <p className="text-body-lg" style={{ fontSize: '0.85rem', color: 'var(--color-on-surface-variant)', lineHeight: '1.7' }}>
+              Our proprietary <strong>Smart Settle</strong> algorithm analyzes every expense in your group to find the absolute minimum number of payments required.
             </p>
+            <ul style={{ padding: 0, marginTop: '1.5rem', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+               <li style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem' }}>
+                  <div style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>01</div>
+                  <p>Preserves everyone's net position exactly—no one pays more than they owe.</p>
+               </li>
+               <li style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem' }}>
+                  <div style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>02</div>
+                  <p>Eliminates redundant "circular" payments between friends.</p>
+               </li>
+               <li style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem' }}>
+                  <div style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>03</div>
+                  <p>Reduces JazzCash/EasyPaisa transaction fees by consolidating amounts.</p>
+               </li>
+            </ul>
+
             {plan && (
-              <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-outline-variant)' }}>
-                <p className="text-label-sm" style={{ marginBottom: '0.75rem' }}>Plan Status</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                  <span>Steps settled</span>
-                  <span style={{ fontWeight: '600', color: '#1b5e20' }}>{confirmedSteps.length} / {steps.length}</span>
+              <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid var(--color-outline-variant)' }}>
+                <p className="text-label-sm" style={{ marginBottom: '1rem', color: 'var(--color-primary)' }}>Live Statistics</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.9rem' }}>
+                  <span>Completed</span>
+                  <span style={{ fontWeight: '700', color: 'var(--color-success)' }}>{confirmedSteps.length} / {steps.length}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                  <span>Confirmed</span>
-                  <span style={{ fontWeight: '600', color: plan.is_confirmed ? '#1b5e20' : 'var(--color-on-surface-variant)' }}>{plan.is_confirmed ? 'Yes' : 'No'}</span>
+                  <span>Status</span>
+                  <span style={{ fontWeight: '700', color: plan.is_confirmed ? 'var(--color-success)' : 'var(--color-on-surface-variant)' }}>
+                    {plan.is_confirmed ? 'LOCKED' : 'DRAFT'}
+                  </span>
+                </div>
+                
+                <div style={{ marginTop: '1.5rem', height: '8px', backgroundColor: 'var(--color-surface-container-highest)', borderRadius: '10px', overflow: 'hidden' }}>
+                   <div style={{ width: `${(confirmedSteps.length / (steps.length || 1)) * 100}%`, height: '100%', backgroundColor: 'var(--color-success)', transition: 'width 0.5s ease' }}></div>
                 </div>
               </div>
             )}
           </div>
         </aside>
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+          animation: spin 1s linear infinite;
+        }
+        @media (max-width: 600px) {
+          .container { padding: 1rem !important; }
+          .text-display-lg { font-size: 1.75rem !important; }
+        }
+      `}} />
     </div>
   );
 };

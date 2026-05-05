@@ -48,6 +48,7 @@ export interface Expense {
   profiles?: Profile;
   groups?: Group;
   expense_participants?: ExpenseParticipant[];
+  is_settled: boolean;
 }
 
 export interface ExpenseParticipant {
