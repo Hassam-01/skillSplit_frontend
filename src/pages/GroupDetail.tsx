@@ -5,8 +5,10 @@ import { useGroupDetail } from '../hooks/useGroupDetail';
 import { useAuth } from '../contexts/AuthContext';
 import AddExpenseModal from '../components/AddExpenseModal';
 import SettleUpModal from '../components/SettleUpModal';
+import AddMemberModal from '../components/AddMemberModal';
 import { supabase } from '../utils/supabase';
 import type { Expense, Profile, GroupMember } from '../types/database';
+import { Copy, Check, UserPlus } from 'lucide-react';
 
 const CATEGORY_EMOJI: Record<string, string> = { dining: '🍽️', food: '🍽️', transport: '🚗', travel: '✈️', entertainment: '🎬', shopping: '🛍️', utilities: '💡', health: '🏥', sightseeing: '🏛️', other: '📦' };
 const getCatEmoji = (cat: string | null) => CATEGORY_EMOJI[cat?.toLowerCase() ?? ''] ?? '📦';
@@ -17,6 +19,8 @@ const GroupDetail = () => {
   const { data, loading, error, refetch } = useGroupDetail(id);
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
   const [isSettleOpen, setIsSettleOpen] = useState(false);
+  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [raiseDisputeId, setRaiseDisputeId] = useState<string | null>(null);
   const [disputeReason, setDisputeReason] = useState('');
   const [disputeLoading, setDisputeLoading] = useState(false);
@@ -34,6 +38,13 @@ const GroupDetail = () => {
     if (!confirm('Soft-delete this expense?')) return;
     await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).eq('id', expenseId);
     refetch();
+  };
+
+  const copyInviteToken = () => {
+    if (!data?.invite_token) return;
+    navigator.clipboard.writeText(data.invite_token);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   if (loading) return <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--color-on-surface-variant)' }}>Loading group…</div>;
@@ -68,6 +79,7 @@ const GroupDetail = () => {
 
       <AddExpenseModal isOpen={isExpenseOpen} onClose={() => setIsExpenseOpen(false)} onSaved={() => { setIsExpenseOpen(false); refetch(); }} groupId={id} groupMembers={data.members as GroupMember[]} />
       <SettleUpModal isOpen={isSettleOpen} onClose={() => setIsSettleOpen(false)} onSettled={() => { setIsSettleOpen(false); refetch(); }} groupId={id!} memberBalances={data.memberBalances} />
+      <AddMemberModal isOpen={isAddMemberOpen} onClose={() => setIsAddMemberOpen(false)} groupId={id!} onAdded={refetch} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '3rem' }}>
         <section>
@@ -157,44 +169,100 @@ const GroupDetail = () => {
           <div className="surface-high" style={{ padding: '2rem', borderRadius: 'var(--radius-xl)', marginBottom: '2rem' }}>
             <h3 className="text-title-lg" style={{ marginBottom: '1.5rem' }}>Balances</h3>
             {data.memberBalances.length === 0 ? (
-              <p style={{ color: 'var(--color-on-surface-variant)', fontSize: '0.9rem' }}>All settled up!</p>
+              <div style={{ textAlign: 'center', padding: '2rem 1rem', backgroundColor: 'rgba(27,94,32,0.05)', borderRadius: 'var(--radius-md)', color: '#1b5e20' }}>
+                <p style={{ fontSize: '0.9rem', fontWeight: '600' }}>✨ You're all settled up!</p>
+              </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                {data.memberBalances.map(mb => (
-                  <div key={mb.userId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <p style={{ fontWeight: '600' }}>{mb.displayName}</p>
-                      <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-                        {mb.netBalance > 0.01 ? 'owes you' : mb.netBalance < -0.01 ? 'you owe' : 'settled'}
-                      </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {data.memberBalances.map(mb => {
+                  const isOwed = mb.netBalance > 0.01;
+                  const isOwer = mb.netBalance < -0.01;
+                  const statusColor = isOwed ? 'var(--color-success)' : isOwer ? 'var(--color-error)' : 'var(--color-on-surface-variant)';
+                  const bgColor = isOwed ? 'var(--color-success-container)' : isOwer ? 'var(--color-error-container)' : 'var(--color-surface-container-lowest)';
+
+                  return (
+                    <div key={mb.userId} style={{ 
+                      padding: '1rem', 
+                      borderRadius: 'var(--radius-md)', 
+                      backgroundColor: bgColor,
+                      border: `1px solid ${isOwed ? 'var(--color-success-container)' : isOwer ? 'var(--color-error-container)' : 'var(--color-outline-variant)'}`,
+                      display: 'flex', 
+                      alignItems: 'center',
+                      gap: '0.875rem'
+                    }}>
+                      <div style={{ 
+                        width: '40px', height: '40px', borderRadius: '10px', 
+                        backgroundColor: isOwed ? 'var(--color-success-container)' : isOwer ? 'var(--color-error-container)' : 'var(--color-surface-container-high)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.9rem', fontWeight: '700', color: statusColor, flexShrink: 0
+                      }}>
+                        {mb.displayName[0].toUpperCase()}
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <p style={{ 
+                          fontWeight: '700', 
+                          fontSize: '1rem', 
+                          color: 'var(--color-on-surface)',
+                          marginBottom: '0.125rem',
+                          overflow: 'hidden', 
+                          textOverflow: 'ellipsis', 
+                          whiteSpace: 'nowrap' 
+                        }}>
+                          {mb.displayName}
+                        </p>
+                        <p style={{ 
+                          fontSize: '0.85rem', 
+                          fontWeight: '500',
+                          color: statusColor,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem'
+                        }}>
+                          {isOwed ? 'Owes you' : isOwer ? 'You owe' : 'Settled'}
+                          <span style={{ fontWeight: '700' }}>
+                            Rs. {Math.abs(mb.netBalance).toLocaleString()}
+                          </span>
+                        </p>
+                      </div>
                     </div>
-                    <p style={{ fontWeight: '700', color: mb.netBalance > 0.01 ? '#1b5e20' : mb.netBalance < -0.01 ? '#b71c1c' : 'var(--color-on-surface)' }}>
-                      Rs. {Math.abs(mb.netBalance).toLocaleString()}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             <button className="btn-gradient" style={{ width: '100%', marginTop: '2rem' }} onClick={() => setIsSettleOpen(true)}>Settle Up</button>
           </div>
 
           <div className="surface-low" style={{ padding: '2rem', borderRadius: 'var(--radius-xl)' }}>
-            <h3 className="text-title-lg" style={{ marginBottom: '1rem' }}>Group Info</h3>
-            <div style={{ fontSize: '0.875rem', color: 'var(--color-on-surface-variant)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Type</span><span style={{ fontWeight: '600', color: 'var(--color-on-surface)' }}>{data.group_type}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Members</span><span style={{ fontWeight: '600', color: 'var(--color-on-surface)' }}>{data.members.length}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Expenses</span><span style={{ fontWeight: '600', color: 'var(--color-on-surface)' }}>{data.expenses.length}</span>
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 className="text-title-lg">Members</h3>
+              <button onClick={() => setIsAddMemberOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem', fontWeight: '600' }}>
+                <UserPlus size={16} /> Add
+              </button>
             </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              {data.members.map(m => {
+                const profile = m.profiles as unknown as Profile | null;
+                return (
+                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-surface-container-high)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: '700' }}>
+                      {(profile?.display_name ?? '?')[0]}
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '0.875rem', fontWeight: '600' }}>{profile?.display_name ?? 'Unknown'}</p>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--color-on-surface-variant)' }}>{m.role}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <h3 className="text-title-lg" style={{ marginBottom: '1rem', fontSize: '1rem' }}>Invite Link</h3>
             {data.invite_token && (
-              <div style={{ marginTop: '1.25rem', padding: '0.75rem', backgroundColor: 'var(--color-surface-container-lowest)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
-                <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)', marginBottom: '0.25rem' }}>Invite Token</p>
-                <p style={{ fontSize: '0.8rem', fontWeight: '600', wordBreak: 'break-all', color: 'var(--color-primary)' }}>{data.invite_token}</p>
+              <div style={{ padding: '0.75rem', backgroundColor: 'var(--color-surface-container-lowest)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', border: '1px solid var(--color-outline-variant)' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: '600', wordBreak: 'break-all', color: 'var(--color-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.invite_token}</p>
+                <button onClick={copyInviteToken} style={{ background: 'none', border: 'none', cursor: 'pointer', color: copied ? '#1b5e20' : 'var(--color-on-surface-variant)' }}>
+                  {copied ? <Check size={16} /> : <Copy size={16} />}
+                </button>
               </div>
             )}
           </div>

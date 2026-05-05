@@ -60,9 +60,9 @@ const Dashboard = () => {
             <div key={i} className="surface-lowest" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', height: '80px', animation: 'pulse 1.5s infinite' }} />
           ))
         ) : ([
-          { label: 'Net Balance', value: stats.totalBalance, color: stats.totalBalance >= 0 ? 'var(--color-primary)' : '#b71c1c', icon: null },
-          { label: 'You are owed', value: stats.youAreOwed, color: '#1b5e20', icon: <ArrowUpRight size={20} /> },
-          { label: 'You owe', value: stats.youOwe, color: '#b71c1c', icon: <ArrowDownLeft size={20} /> },
+          { label: 'Net Balance', value: stats.totalBalance, color: stats.totalBalance >= 0 ? 'var(--color-primary)' : 'var(--color-error)', icon: null },
+          { label: 'You are owed', value: stats.youAreOwed, color: 'var(--color-success)', icon: <ArrowUpRight size={20} /> },
+          { label: 'You owe', value: stats.youOwe, color: 'var(--color-error)', icon: <ArrowDownLeft size={20} /> },
         ].map((stat, idx) => (
           <div key={idx} className="surface-lowest" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
             <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)', marginBottom: '0.5rem' }}>{stat.label}</p>
@@ -118,7 +118,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontWeight: '700', fontSize: '1rem', color: paidByMe ? '#1b5e20' : 'var(--color-on-surface)' }}>
+                      <p style={{ fontWeight: '700', fontSize: '1rem', color: paidByMe ? 'var(--color-success)' : 'var(--color-on-surface)' }}>
                         {paidByMe ? '+' : '-'} Rs. {(paidByMe ? Number(expense.amount) - myShare : myShare).toLocaleString()}
                       </p>
                       <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>

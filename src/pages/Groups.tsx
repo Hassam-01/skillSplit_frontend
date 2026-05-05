@@ -16,6 +16,8 @@ const Groups = () => {
   const [joinLoading, setJoinLoading] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joinSuccess, setJoinSuccess] = useState<string | null>(null);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
 
   const handleJoin = async () => {
     if (!user || !inviteCode.trim()) return;
@@ -51,6 +53,25 @@ const Groups = () => {
       setJoinError((err as Error).message);
     } finally {
       setJoinLoading(false);
+    }
+  };
+
+  const handleRename = async (id: string) => {
+    if (!editValue.trim()) {
+      setEditingGroupId(null);
+      return;
+    }
+    try {
+      const { error: uErr } = await supabase
+        .from('groups')
+        .update({ name: editValue.trim() })
+        .eq('id', id);
+      if (uErr) throw uErr;
+      refetch();
+    } catch (err: unknown) {
+      alert((err as Error).message);
+    } finally {
+      setEditingGroupId(null);
     }
   };
 
@@ -100,7 +121,38 @@ const Groups = () => {
                         {GROUP_TYPE_EMOJI[group.group_type] ?? '👥'}
                       </div>
                       <div>
-                        <h4 style={{ fontSize: '1.125rem', fontWeight: '700' }}>{group.name}</h4>
+                        {editingGroupId === group.id ? (
+                          <input
+                            autoFocus
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onBlur={() => handleRename(group.id)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleRename(group.id)}
+                            onClick={(e) => e.preventDefault()}
+                            style={{ 
+                              fontSize: '1.125rem', 
+                              fontWeight: '700', 
+                              border: 'none', 
+                              borderBottom: '2px solid var(--color-primary)', 
+                              backgroundColor: 'transparent', 
+                              outline: 'none', 
+                              padding: '0',
+                              width: '200px' 
+                            }}
+                          />
+                        ) : (
+                          <h4 
+                            style={{ fontSize: '1.125rem', fontWeight: '700', cursor: 'text' }}
+                            onDoubleClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setEditingGroupId(group.id);
+                              setEditValue(group.name);
+                            }}
+                          >
+                            {group.name}
+                          </h4>
+                        )}
                         <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>{group.member_count} Member{group.member_count !== 1 ? 's' : ''} • {group.group_type}</p>
                       </div>
                     </div>
