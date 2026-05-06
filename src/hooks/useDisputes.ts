@@ -49,7 +49,7 @@ export function useDisputes() {
       if (dErr) throw dErr;
 
       const result: DisputeWithDetail[] = (rawDisputes ?? []).map(d => {
-        const rawExp = Array.isArray(d.expenses) ? d.expenses[0] : d.expenses;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const exp = rawExp as { description: string; amount: number; group_id: string; groups: any } | null;
         const rawGroup = Array.isArray(exp?.groups) ? exp.groups[0] : exp?.groups;
         const group = rawGroup as { name: string } | null;

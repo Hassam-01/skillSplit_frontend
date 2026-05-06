@@ -119,6 +119,7 @@ export function useGroupDetail(groupId: string | undefined) {
         expenses: (expenses ?? []).map(e => ({
           ...e,
           profiles: Array.isArray(e.profiles) ? e.profiles[0] : e.profiles,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           expense_participants: (e.expense_participants as any[] ?? []).map(ep => ({
             ...ep,
             profiles: Array.isArray(ep.profiles) ? ep.profiles[0] : ep.profiles

@@ -110,7 +110,10 @@ export function useGroups() {
   }, [user]);
 
   useEffect(() => {
-    fetchGroups();
+    const load = async () => {
+      await fetchGroups();
+    };
+    load();
   }, [fetchGroups]);
 
   return { groups, loading, error, refetch: fetchGroups };
