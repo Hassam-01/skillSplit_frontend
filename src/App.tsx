@@ -9,6 +9,8 @@ import Signup from './pages/Signup';
 import GroupDetail from './pages/GroupDetail';
 import OptimizationCenter from './pages/OptimizationCenter';
 import ActivityLog from './pages/ActivityLog';
+import Profile from './pages/Profile';
+import Notifications from './pages/Notifications';
 import Disputes from './pages/Disputes';
 
 /** Redirects unauthenticated users to /login */
@@ -56,6 +58,8 @@ const AppContent = () => {
       <Route path="/optimize" element={<ProtectedRoute><Layout><OptimizationCenter /></Layout></ProtectedRoute>} />
       <Route path="/disputes" element={<ProtectedRoute><Layout><Disputes /></Layout></ProtectedRoute>} />
       <Route path="/activity" element={<ProtectedRoute><Layout><ActivityLog /></Layout></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
+      <Route path="/notifications" element={<ProtectedRoute><Layout><Notifications /></Layout></ProtectedRoute>} />
       <Route path="/help" element={<ProtectedRoute><Layout><div style={{ padding: '2rem' }}><h2 className="text-headline-lg">Help Center</h2><p className="text-body-lg" style={{ marginTop: '0.5rem' }}>Coming Soon. Reach out to your group admin for assistance.</p></div></Layout></ProtectedRoute>} />
 
       {/* Fallback */}

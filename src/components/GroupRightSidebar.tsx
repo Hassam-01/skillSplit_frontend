@@ -143,9 +143,11 @@ const GroupRightSidebar: React.FC<GroupRightSidebarProps> = ({
         <div className="surface-low" style={{ padding: '2rem', borderRadius: 'var(--radius-xl)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
             <h3 className="text-title-lg">Members</h3>
-            <button onClick={onAddMember} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem', fontWeight: '600' }}>
-              <UserPlus size={16} /> Add
-            </button>
+            {isAdmin && (
+              <button onClick={onAddMember} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem', fontWeight: '600' }}>
+                <UserPlus size={16} /> Add
+              </button>
+            )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
             {data.members.map((m) => {
@@ -161,7 +163,7 @@ const GroupRightSidebar: React.FC<GroupRightSidebarProps> = ({
                       <p style={{ fontSize: '0.7rem', color: 'var(--color-on-surface-variant)' }}>{m.role}</p>
                     </div>
                   </div>
-                  {(m.user_id === user?.id ? (m.role !== 'admin' && !isUserInvolved(m.user_id)) : (isAdmin && !isUserInvolved(m.user_id))) && (
+                  {(m.user_id === user?.id ? (m.role !== 'admin' && !isUserInvolved(m.user_id)) : isAdmin) && (
                     <button 
                       onClick={() => onRemoveMember({ id: m.id, user_id: m.user_id, displayName: profile?.display_name ?? 'Unknown' })}
                       style={{ background: 'none', border: 'none', padding: '0.4rem', cursor: 'pointer', color: 'var(--color-outline-variant)', transition: 'color 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}

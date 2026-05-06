@@ -27,7 +27,7 @@ describe('AddMemberModal Component', () => {
 
     render(<AddMemberModal isOpen={true} onClose={() => {}} groupId="g1" onAdded={() => {}} />);
 
-    const input = screen.getByPlaceholderText(/Search by phone or name/i);
+    const input = screen.getByPlaceholderText(/Search by phone.*or name/i);
     fireEvent.change(input, { target: { value: 'New' } });
     
     fireEvent.click(screen.getByLabelText('Search'));
@@ -63,7 +63,7 @@ describe('AddMemberModal Component', () => {
     render(<AddMemberModal isOpen={true} onClose={() => {}} groupId="g1" onAdded={onAdded} />);
 
     // Trigger search
-    const input = screen.getByPlaceholderText(/Search by phone or name/i);
+    const input = screen.getByPlaceholderText(/Search by phone.*or name/i);
     fireEvent.change(input, { target: { value: 'New' } });
     fireEvent.click(screen.getByLabelText('Search'));
     
@@ -91,7 +91,7 @@ describe('AddMemberModal Component', () => {
 
     render(<AddMemberModal isOpen={true} onClose={() => {}} groupId="g1" onAdded={() => {}} />);
 
-    const input = screen.getByPlaceholderText(/Search by phone or name/i);
+    const input = screen.getByPlaceholderText(/Search by phone.*or name/i);
     fireEvent.change(input, { target: { value: 'New' } });
     fireEvent.click(screen.getByLabelText('Search'));
     

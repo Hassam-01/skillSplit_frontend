@@ -1,7 +1,5 @@
-import { useState } from 'react';
-import { ArrowUpRight, ArrowDownLeft, Plus, RefreshCw, AlertCircle, Users } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, RefreshCw, AlertCircle, Users, Bell, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import AddExpenseModal from '../components/AddExpenseModal';
 import { useExpenses } from '../hooks/useExpenses';
 import { useAuth } from '../contexts/AuthContext';
 import type { Expense } from '../types/database';
@@ -28,7 +26,6 @@ const formatAgo = (dateStr: string) => {
 const Dashboard = () => {
   const { user, profile } = useAuth();
   const { recentExpenses, stats, loading, error, refetch } = useExpenses();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const greeting = profile?.display_name ? `Hey, ${profile.display_name.split(' ')[0]}!` : 'Dashboard';
@@ -40,12 +37,23 @@ const Dashboard = () => {
           <h2 className="text-headline-lg">{greeting}</h2>
           <p className="text-body-lg">Your financial footprint across all endeavors.</p>
         </div>
-        <button className="btn-gradient" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setIsModalOpen(true)}>
-          <Plus size={20} /> Add Expense
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1rem' }} onClick={() => navigate('/notifications')}>
+            <div style={{ position: 'relative' }}>
+              <Bell size={20} />
+              {stats.pendingSettlementsCount > 0 && (
+                <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '8px', height: '8px', backgroundColor: 'var(--color-error)', borderRadius: '50%' }} />
+              )}
+            </div>
+            <span className="lg-show">Notifications</span>
+          </button>
+          <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1rem' }} onClick={() => navigate('/profile')}>
+            <User size={20} />
+            <span className="lg-show">Profile</span>
+          </button>
+        </div>
       </header>
 
-      <AddExpenseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSaved={() => { setIsModalOpen(false); refetch(); }} />
 
       {error && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', backgroundColor: 'rgba(186,26,26,0.06)', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', color: 'var(--color-error)' }}>

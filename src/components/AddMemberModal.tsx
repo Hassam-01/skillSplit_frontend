@@ -25,11 +25,15 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose, groupI
     setLoading(true);
     setError(null);
     try {
+      let query = searchQuery.trim();
+      // If starts with 03, also try searching for +923
+      const alternateQuery = query.startsWith('03') ? '+92' + query.substring(1) : query.startsWith('+92') ? '0' + query.substring(3) : query;
+      
       const { data, error: sErr } = await supabase
         .from('profiles')
         .select('*')
-        .or(`phone.eq.${searchQuery.trim()},display_name.ilike.%${searchQuery.trim()}%`)
-        .limit(5);
+        .or(`phone.ilike.%${query}%,phone.ilike.%${alternateQuery}%,display_name.ilike.%${query}%`)
+        .limit(10);
       
       if (sErr) throw sErr;
       setResults(data || []);
@@ -99,7 +103,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose, groupI
               type="text" 
               value={searchQuery} 
               onChange={e => setSearchQuery(e.target.value)} 
-              placeholder="Search by phone or name…" 
+              placeholder="Search by phone (03xx...) or name…" 
               style={inputStyle}
               required
             />
@@ -108,6 +112,13 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose, groupI
             {loading ? <Loader size={18} className="animate-spin" /> : <Search size={18} />}
           </button>
         </form>
+
+        <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--color-surface-container-low)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--color-outline-variant)' }}>
+          <p style={{ fontSize: '0.75rem', color: 'var(--color-on-surface-variant)', marginBottom: '0.5rem', fontWeight: '600' }}>Quick Tip:</p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--color-on-surface)' }}>
+            Can't find them? Tell them to join SkillSplit and set their name, or share the group invite link from the sidebar!
+          </p>
+        </div>
 
         {error && <p style={{ color: 'var(--color-error)', fontSize: '0.85rem', marginBottom: '1rem', padding: '0.75rem', backgroundColor: 'rgba(186,26,26,0.05)', borderRadius: 'var(--radius-md)' }}>{error}</p>}
 

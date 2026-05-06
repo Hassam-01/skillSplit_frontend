@@ -21,6 +21,8 @@ const SettleUpModal: React.FC<SettleUpModalProps> = ({ isOpen, onClose, onSettle
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [notes, setNotes] = useState('');
+  const [isSettleLater, setIsSettleLater] = useState(false);
+  const [dueDate, setDueDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,7 +45,8 @@ const SettleUpModal: React.FC<SettleUpModalProps> = ({ isOpen, onClose, onSettle
         amount: parseFloat(amount),
         payment_method: paymentMethod,
         notes: notes.trim() || null,
-        status: 'pending',
+        status: isSettleLater ? 'scheduled' : 'pending',
+        due_date: isSettleLater ? dueDate : null,
       });
       if (sErr) throw sErr;
 
@@ -127,6 +130,18 @@ const SettleUpModal: React.FC<SettleUpModalProps> = ({ isOpen, onClose, onSettle
               <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Notes (optional)</label>
               <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add a note…" style={inputStyle} />
             </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', backgroundColor: 'var(--color-surface-container-low)', borderRadius: 'var(--radius-md)', cursor: 'pointer' }} onClick={() => setIsSettleLater(!isSettleLater)}>
+              <input type="checkbox" checked={isSettleLater} onChange={() => {}} style={{ cursor: 'pointer' }} />
+              <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>Settle Later (Schedule payment)</span>
+            </div>
+
+            {isSettleLater && (
+              <div>
+                <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Due Date</label>
+                <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} required={isSettleLater} style={inputStyle} min={new Date().toISOString().split('T')[0]} />
+              </div>
+            )}
 
             {error && <p style={{ color: 'var(--color-error)', fontSize: '0.875rem' }}>{error}</p>}
 

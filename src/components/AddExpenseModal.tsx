@@ -1,7 +1,7 @@
 import { Check, ChevronDown, Users, X, Zap } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import type { GroupMember, Profile } from '../types/database';
+import type { GroupMember, Profile, Expense } from '../types/database';
 import { logAction } from '../utils/auditLog';
 import { supabase } from '../utils/supabase';
 
@@ -11,6 +11,7 @@ interface AddExpenseModalProps {
   onSaved: () => void;
   groupId?: string;
   groupMembers?: GroupMember[];
+  existingExpense?: Expense;
 }
 
 const CATEGORIES = ['dining', 'food', 'transport', 'travel', 'entertainment', 'shopping', 'utilities', 'health', 'sightseeing', 'other'];
@@ -18,9 +19,10 @@ const SPLIT_TYPES = [
   { value: 'equal', label: 'Equal Split' },
   { value: 'percentage', label: 'By Percentage' },
   { value: 'exact', label: 'Exact Amounts' },
+  { value: 'itemized', label: 'By Items' },
 ];
 
-const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSaved, groupId, groupMembers }) => {
+const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSaved, groupId, groupMembers, existingExpense }) => {
   const { user, profile } = useAuth();
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
@@ -35,11 +37,51 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
   const [exactAmounts, setExactAmounts] = useState<Record<string, string>>({});
   const [percentages, setPercentages] = useState<Record<string, string>>({});
   const [touchedIds, setTouchedIds] = useState<Set<string>>(new Set());
+  const [items, setItems] = useState<{ id: string; name: string; amount: string; participantIds: string[] }[]>([]);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const totalAmount = parseFloat(amount) || 0;
+  useEffect(() => {
+    if (existingExpense) {
+      setDescription(existingExpense.description);
+      setAmount(existingExpense.amount.toString());
+      setCategory(existingExpense.category || 'other');
+      setSplitType(existingExpense.is_treat ? 'equal' : existingExpense.split_type);
+      setNotes(existingExpense.notes || '');
+      setPaidById(existingExpense.paid_by);
+      setIsTreatMode(existingExpense.is_treat);
+      
+      if (existingExpense.expense_participants) {
+        setSelectedParticipantIds(existingExpense.expense_participants.map(p => p.user_id));
+        if (existingExpense.split_type === 'exact') {
+          const exact: Record<string, string> = {};
+          existingExpense.expense_participants.forEach(p => exact[p.user_id] = p.share_amount.toString());
+          setExactAmounts(exact);
+        } else if (existingExpense.split_type === 'percentage') {
+          const perc: Record<string, string> = {};
+          existingExpense.expense_participants.forEach(p => perc[p.user_id] = (p.share_percent || 0).toString());
+          setPercentages(perc);
+        }
+      }
+    } else {
+      // Default reset if not editing
+      setDescription('');
+      setAmount('');
+      setCategory('other');
+      setSplitType('equal');
+      setNotes('');
+      setPaidById(user?.id ?? '');
+      setIsTreatMode(false);
+      setSelectedParticipantIds(user ? [user.id] : []);
+      setExactAmounts({});
+      setPercentages({});
+      setTouchedIds(new Set());
+    }
+  }, [existingExpense, isOpen, user]);
+
+  const itemsTotal = items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+  const totalAmount = splitType === 'itemized' ? itemsTotal : (parseFloat(amount) || 0);
   const members = groupMembers?.map(m => ({ id: m.user_id, name: (m.profiles as unknown as Profile | null)?.display_name ?? 'Unknown' })) ?? [];
 
   // Reset logic when opening or changing split type
@@ -135,13 +177,30 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
       }
     } else if (splitType === 'equal') {
       const share = totalAmount / participants.length;
-      participants.forEach(id => { shares[id] = Math.round(share * 100) / 100; });
+      participants.forEach(id => { shares[id] = Math.round(share); });
       const total = Object.values(shares).reduce((a, b) => a + b, 0);
       if (Math.abs(total - totalAmount) > 0.001) shares[participants[0]] += totalAmount - total;
     } else if (splitType === 'percentage') {
-      participants.forEach(id => { shares[id] = Math.round((totalAmount * (parseFloat(percentages[id]) || 0) / 100) * 100) / 100; });
+      participants.forEach(id => { shares[id] = Math.round(totalAmount * (parseFloat(percentages[id]) || 0) / 100); });
       const total = Object.values(shares).reduce((a, b) => a + b, 0);
       if (Math.abs(total - totalAmount) > 0.001) shares[participants[0]] += totalAmount - total;
+    } else if (splitType === 'itemized') {
+      items.forEach(item => {
+        const itemAmount = parseFloat(item.amount) || 0;
+        if (item.participantIds.length > 0) {
+          const share = itemAmount / item.participantIds.length;
+          item.participantIds.forEach(id => {
+            shares[id] = (shares[id] || 0) + share;
+          });
+        }
+      });
+      // Round shares
+      Object.keys(shares).forEach(id => {
+        shares[id] = Math.round(shares[id]);
+      });
+      const total = Object.values(shares).reduce((a, b) => a + b, 0);
+      const firstId = Object.keys(shares)[0];
+      if (firstId && Math.abs(total - totalAmount) > 0.001) shares[firstId] += totalAmount - total;
     } else {
       participants.forEach(id => { shares[id] = parseFloat(exactAmounts[id]) || 0; });
     }
@@ -152,6 +211,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
     if (isTreatMode) return totalAmount;
     if (splitType === 'percentage') return sum + (parseFloat(percentages[id]) || 0);
     if (splitType === 'exact') return sum + (parseFloat(exactAmounts[id]) || 0);
+    if (splitType === 'itemized') return itemsTotal;
     return totalAmount;
   }, 0);
 
@@ -159,7 +219,9 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
     ? Math.abs(currentSum - 100) > 0.01 
     : splitType === 'exact' 
       ? Math.abs(currentSum - totalAmount) > 0.01 
-      : totalAmount <= 0;
+      : splitType === 'itemized'
+        ? items.length === 0 || items.some(i => (parseFloat(i.amount) || 0) <= 0 || i.participantIds.length === 0)
+        : totalAmount <= 0;
 
   const toggleParticipant = (id: string) => {
     setSelectedParticipantIds(prev => {
@@ -188,6 +250,17 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !groupId) return;
+
+    const specialCharRegex = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/;
+    if (specialCharRegex.test(description)) {
+      setError('Description contains invalid special characters.');
+      return;
+    }
+    if (totalAmount <= 0) {
+      setError('Expense amount must be greater than 0.');
+      return;
+    }
+    
     if (selectedParticipantIds.length === 0) { setError('Select at least one participant.'); return; }
     if (isInvalid) { 
       setError(splitType === 'percentage' ? 'Percentages must total 100%' : 'Exact amounts must total the total amount'); 
@@ -197,16 +270,33 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
     setError(null);
     try {
       const shares = computeShares();
-      const { data: expense, error: eErr } = await supabase.from('expenses').insert({
-        group_id: groupId, description: description.trim(), amount: totalAmount, currency: 'PKR',
-        paid_by: paidById, split_type: isTreatMode ? 'treat' : splitType, category, notes: notes.trim() || null, 
-        created_by: user.id, is_treat: isTreatMode,
-      }).select().single();
-      if (eErr) throw eErr;
+      let expenseId = existingExpense?.id;
+
+      if (existingExpense) {
+        // Update existing expense
+        const { error: eErr } = await supabase.from('expenses').update({
+          description: description.trim(), amount: totalAmount,
+          paid_by: paidById, split_type: isTreatMode ? 'treat' : splitType, category, notes: notes.trim() || null, 
+          is_treat: isTreatMode, updated_at: new Date().toISOString()
+        }).eq('id', existingExpense.id);
+        if (eErr) throw eErr;
+
+        // Delete old participants and re-insert (simpler than updating)
+        await supabase.from('expense_participants').delete().eq('expense_id', existingExpense.id);
+      } else {
+        // Insert new expense
+        const { data: expense, error: eErr } = await supabase.from('expenses').insert({
+          group_id: groupId, description: description.trim(), amount: totalAmount, currency: 'PKR',
+          paid_by: paidById, split_type: isTreatMode ? 'treat' : splitType, category, notes: notes.trim() || null, 
+          created_by: user.id, is_treat: isTreatMode,
+        }).select().single();
+        if (eErr) throw eErr;
+        expenseId = expense.id;
+      }
 
       const allParticipantIds = Array.from(new Set([...selectedParticipantIds, paidById]));
       const participantRows = allParticipantIds.map(uid => ({
-        expense_id: expense.id, user_id: uid, share_amount: shares[uid] ?? 0, is_payer: uid === paidById,
+        expense_id: expenseId, user_id: uid, share_amount: shares[uid] ?? 0, is_payer: uid === paidById,
       }));
       const { error: pErr } = await supabase.from('expense_participants').insert(participantRows);
       if (pErr) throw pErr;
@@ -215,18 +305,21 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
       const notifRows = selectedParticipantIds
         .filter(id => id !== user.id)
         .map(uid => ({
-          user_id: uid, type: 'expense_added', title: isTreatMode ? `Treat from ${payerName}` : `New expense: ${description}`,
+          user_id: uid, type: existingExpense ? 'expense_updated' : 'expense_added', 
+          title: isTreatMode ? `Treat from ${payerName}` : `${existingExpense ? 'Updated' : 'New'} expense: ${description}`,
           body: isTreatMode 
             ? `${payerName} treated everyone to "${description}"! Your share is Rs. 0.`
-            : `${payerName} added Rs. ${totalAmount.toLocaleString()} expense. Your share: Rs. ${(shares[uid] ?? 0).toLocaleString()}`,
-          related_id: expense.id,
+            : `${payerName} ${existingExpense ? 'updated' : 'added'} Rs. ${totalAmount.toLocaleString()} expense. Your share: Rs. ${(shares[uid] ?? 0).toLocaleString()}`,
+          related_id: expenseId,
         }));
       if (notifRows.length > 0) await supabase.from('notifications').insert(notifRows);
 
-      await logAction({ groupId, actorId: user.id, action: 'expense_added', targetId: expense.id, targetType: 'expense', newValue: { description, amount: totalAmount } });
+      await logAction({ 
+        groupId, actorId: user.id, action: existingExpense ? 'expense_updated' : 'expense_added', 
+        targetId: expenseId, targetType: 'expense', 
+        newValue: { description, amount: totalAmount } 
+      });
 
-      setDescription(''); setAmount(''); setCategory('other'); setSplitType('equal'); setNotes(''); setIsTreatMode(false);
-      setSelectedParticipantIds(user ? [user.id] : []); setExactAmounts({}); setPercentages({}); setTouchedIds(new Set());
       onSaved();
     } catch (err: unknown) {
       setError((err as Error).message);
@@ -374,7 +467,96 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
               })}
             </div>
 
-            {splitType !== 'equal' && !isTreatMode && selectedParticipantIds.length > 0 && (
+            {splitType === 'itemized' && !isTreatMode && (
+              <div style={{ marginTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.25rem', backgroundColor: 'var(--color-surface-container-lowest)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-outline-variant)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: '700' }}>Itemized Breakdown</h4>
+                  <button 
+                    type="button" 
+                    onClick={() => setItems([...items, { id: Math.random().toString(36).substr(2, 9), name: '', amount: '', participantIds: [] }])}
+                    className="btn-secondary"
+                    style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem' }}
+                  >
+                    + Add Item
+                  </button>
+                </div>
+
+                {items.length === 0 ? (
+                  <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-on-surface-variant)', padding: '1rem' }}>No items added. Add items to split by cost.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    {items.map((item, idx) => (
+                      <div key={item.id} style={{ padding: '1rem', backgroundColor: 'var(--color-surface-container-low)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(0,0,0,0.05)' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                          <input 
+                            type="text" 
+                            placeholder="Item Name (e.g. Biryani)" 
+                            value={item.name}
+                            onChange={e => {
+                              const newItems = [...items];
+                              newItems[idx].name = e.target.value;
+                              setItems(newItems);
+                            }}
+                            style={{ ...inputStyle, flex: 2, padding: '0.5rem' }}
+                          />
+                          <input 
+                            type="number" 
+                            placeholder="Price" 
+                            value={item.amount}
+                            onChange={e => {
+                              const newItems = [...items];
+                              newItems[idx].amount = e.target.value;
+                              setItems(newItems);
+                            }}
+                            style={{ ...inputStyle, flex: 1, padding: '0.5rem' }}
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => setItems(items.filter((_, i) => i !== idx))}
+                            style={{ background: 'none', border: 'none', color: 'var(--color-error)', cursor: 'pointer' }}
+                          >
+                            <X size={18} />
+                          </button>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                          {members.map(m => {
+                            const isSelected = item.participantIds.includes(m.id);
+                            return (
+                              <div 
+                                key={m.id} 
+                                onClick={() => {
+                                  const newItems = [...items];
+                                  const pIds = newItems[idx].participantIds;
+                                  newItems[idx].participantIds = pIds.includes(m.id) ? pIds.filter(x => x !== m.id) : [...pIds, m.id];
+                                  setItems(newItems);
+                                }}
+                                style={{ 
+                                  padding: '0.25rem 0.6rem', 
+                                  borderRadius: '4px', 
+                                  backgroundColor: isSelected ? 'var(--color-primary)' : 'var(--color-surface-container-highest)', 
+                                  color: isSelected ? 'white' : 'var(--color-on-surface-variant)', 
+                                  fontSize: '0.7rem', 
+                                  cursor: 'pointer' 
+                                }}
+                              >
+                                {m.id === user?.id ? 'You' : m.name.split(' ')[0]}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                <div style={{ borderTop: '1px solid var(--color-outline-variant)', paddingTop: '0.75rem', marginTop: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>Calculated Total:</span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--color-primary)' }}>Rs. {itemsTotal.toLocaleString()}</span>
+                </div>
+              </div>
+            )}
+
+            {splitType !== 'equal' && splitType !== 'itemized' && !isTreatMode && selectedParticipantIds.length > 0 && (
               <div style={{ marginTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '1rem', backgroundColor: 'var(--color-surface-container-lowest)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-outline-variant)' }}>
                 {selectedParticipantIds.map(id => {
                   const name = members.find(m => m.id === id)?.name ?? 'Unknown';

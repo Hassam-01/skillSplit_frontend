@@ -1,13 +1,19 @@
-import { PlusCircle, CheckCircle, AlertCircle, UserPlus, Clock, RefreshCw, Zap } from 'lucide-react';
+import { PlusCircle, CheckCircle, AlertCircle, UserPlus, Clock, RefreshCw, Zap, Trash2, Target } from 'lucide-react';
 import { useActivityLog } from '../hooks/useActivityLog';
 import type { AuditLog, Profile, Group } from '../types/database';
 
 const ACTION_META: Record<string, { icon: React.ReactNode; color: string }> = {
   created_group: { icon: <UserPlus size={18} color="var(--color-primary)" />, color: 'var(--color-primary)' },
   expense_added: { icon: <PlusCircle size={18} color="var(--color-primary-container)" />, color: 'var(--color-primary-container)' },
+  expense_updated: { icon: <RefreshCw size={18} color="var(--color-primary)" />, color: 'var(--color-primary)' },
+  expense_deleted: { icon: <Trash2 size={18} color="var(--color-error)" />, color: 'var(--color-error)' },
   settlement_created: { icon: <CheckCircle size={18} color="var(--color-success)" />, color: 'var(--color-success)' },
+  settlement_confirmed: { icon: <CheckCircle size={18} color="var(--color-success)" />, color: 'var(--color-success)' },
   dispute_raised: { icon: <AlertCircle size={18} color="var(--color-error)" />, color: 'var(--color-error)' },
   dispute_resolved: { icon: <CheckCircle size={18} color="var(--color-success)" />, color: 'var(--color-success)' },
+  member_added: { icon: <UserPlus size={18} color="var(--color-primary)" />, color: 'var(--color-primary)' },
+  member_removed: { icon: <Trash2 size={18} color="var(--color-error)" />, color: 'var(--color-error)' },
+  pool_created: { icon: <Target size={18} color="var(--color-tertiary)" />, color: 'var(--color-tertiary)' },
   optimization_generated: { icon: <Zap size={18} color="var(--color-on-tertiary-container)" />, color: 'var(--color-on-tertiary-container)' },
 };
 
@@ -16,12 +22,20 @@ const getActionMeta = (action: string) => ACTION_META[action] ?? { icon: <PlusCi
 const formatAction = (log: AuditLog): string => {
   const actor = (log.profiles as unknown as Profile | null)?.display_name ?? 'Someone';
   const group = (log.groups as unknown as Group | null)?.name ?? '';
+  const targetName = (log.new_value as any)?.description || (log.new_value as any)?.name || (log.new_value as any)?.displayName || '';
+
   switch (log.action) {
     case 'created_group': return `${actor} created group "${group}"`;
-    case 'expense_added': return `${actor} added an expense in "${group}"`;
-    case 'settlement_created': return `${actor} created a settlement in "${group}"`;
+    case 'expense_added': return `${actor} added expense "${targetName}" in "${group}"`;
+    case 'expense_updated': return `${actor} updated expense "${targetName}" in "${group}"`;
+    case 'expense_deleted': return `${actor} deleted an expense in "${group}"`;
+    case 'settlement_created': return `${actor} marked a payment of Rs. ${(log.new_value as any)?.amount?.toLocaleString()} in "${group}"`;
+    case 'settlement_confirmed': return `${actor} confirmed a payment in "${group}"`;
     case 'dispute_raised': return `${actor} raised a dispute in "${group}"`;
     case 'dispute_resolved': return `${actor} resolved a dispute in "${group}"`;
+    case 'member_added': return `${actor} added a member to "${group}"`;
+    case 'member_removed': return `${actor} removed a member from "${group}"`;
+    case 'pool_created': return `${actor} created a central pool "${targetName}" in "${group}"`;
     case 'optimization_generated': return `${actor} generated an optimization plan for "${group}"`;
     default: return `${actor} performed action: ${log.action}`;
   }

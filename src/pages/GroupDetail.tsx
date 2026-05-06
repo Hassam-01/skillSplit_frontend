@@ -12,6 +12,7 @@ import {
   ChevronUp,
   CheckCircle,
   Users,
+  Zap,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useGroupDetail } from "../hooks/useGroupDetail";
@@ -25,6 +26,8 @@ import ConfirmModal from "../components/ConfirmModal";
 import SettlementVerification from "../components/SettlementVerification";
 import { logAction } from "../utils/auditLog";
 import GroupRightSidebar from "../components/GroupRightSidebar";
+import PoolsList from "../components/PoolsList";
+import CreatePoolModal from "../components/CreatePoolModal";
 
 const CATEGORY_EMOJI: Record<string, string> = {
   dining: "🍽️",
@@ -65,6 +68,8 @@ const GroupDetail = () => {
   const [expandedExpenseId, setExpandedExpenseId] = useState<string | null>(
     null,
   );
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [isCreatePoolOpen, setIsCreatePoolOpen] = useState(false);
 
 
   const handleRaiseDispute = async (expenseId: string) => {
@@ -406,6 +411,29 @@ const GroupDetail = () => {
                         <CheckCircle size={14} />
                       )}{" "}
                       {isSettled ? "Mark Active" : "Mark Settled"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingExpense(expense);
+                        setIsExpenseOpen(true);
+                        setRaiseDisputeId(null);
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        width: "100%",
+                        padding: "0.6rem 0.75rem",
+                        background: "none",
+                        border: "none",
+                        textAlign: "left",
+                        cursor: "pointer",
+                        fontSize: "0.875rem",
+                        borderRadius: "var(--radius-md)",
+                        color: "var(--color-primary)",
+                      }}
+                    >
+                      <Zap size={14} /> Edit Expense
                     </button>
                     <button
                       onClick={() => setConfirmDeleteExpenseId(expense.id)}
@@ -759,13 +787,18 @@ const GroupDetail = () => {
 
       <AddExpenseModal
         isOpen={isExpenseOpen}
-        onClose={() => setIsExpenseOpen(false)}
+        onClose={() => {
+          setIsExpenseOpen(false);
+          setEditingExpense(null);
+        }}
         onSaved={() => {
           setIsExpenseOpen(false);
+          setEditingExpense(null);
           refetch();
         }}
         groupId={id}
         groupMembers={data.members as GroupMember[]}
+        existingExpense={editingExpense || undefined}
       />
       <SettleUpModal
         isOpen={isSettleOpen}
@@ -782,6 +815,12 @@ const GroupDetail = () => {
         onClose={() => setIsAddMemberOpen(false)}
         groupId={id!}
         onAdded={refetch}
+      />
+      <CreatePoolModal
+        isOpen={isCreatePoolOpen}
+        onClose={() => setIsCreatePoolOpen(false)}
+        groupId={id!}
+        onCreated={refetch}
       />
 
       <div className="grid-asymmetric" style={{ display: "grid", gap: "3rem" }}>
@@ -839,7 +878,7 @@ const GroupDetail = () => {
           )}
 
           {settledExpenses.length > 0 && (
-            <div>
+            <div style={{ marginBottom: '3rem' }}>
               <div
                 onClick={() => setIsSettledCollapsed(!isSettledCollapsed)}
                 style={{
@@ -881,6 +920,21 @@ const GroupDetail = () => {
               )}
             </div>
           )}
+
+          {/* Pools Section */}
+          <section style={{ marginBottom: '3rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 className="text-title-lg">Event Pools</h3>
+              <button 
+                className="btn-secondary" 
+                style={{ padding: '0.4rem 1rem', fontSize: '0.875rem' }}
+                onClick={() => setIsCreatePoolOpen(true)}
+              >
+                + New Pool
+              </button>
+            </div>
+            <PoolsList groupId={id!} />
+          </section>
         </section>
 
         <GroupRightSidebar
