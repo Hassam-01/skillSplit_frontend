@@ -83,18 +83,18 @@ const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ isOpen, onClose, onCr
 
         <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
-            <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Pool Name *</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Birthday Cake Fund" required style={inputStyle} />
+            <label htmlFor="poolName" className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Pool Name *</label>
+            <input id="poolName" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Birthday Cake Fund" required style={inputStyle} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>
-              <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Target Total (Optional)</label>
-              <input type="number" value={targetAmount} onChange={e => setTargetAmount(e.target.value)} placeholder="0.00" style={inputStyle} />
+              <label htmlFor="targetTotal" className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Target Total (Optional)</label>
+              <input id="targetTotal" type="number" value={targetAmount} onChange={e => setTargetAmount(e.target.value)} placeholder="0.00" style={inputStyle} />
             </div>
             <div>
-              <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Per Person (Optional)</label>
-              <input type="number" value={perMember} onChange={e => setPerMember(e.target.value)} placeholder="0.00" style={inputStyle} />
+              <label htmlFor="perPerson" className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Per Person (Optional)</label>
+              <input id="perPerson" type="number" value={perMember} onChange={e => setPerMember(e.target.value)} placeholder="0.00" style={inputStyle} />
             </div>
           </div>
 

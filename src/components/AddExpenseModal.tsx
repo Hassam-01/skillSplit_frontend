@@ -294,7 +294,12 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
         expenseId = expense.id;
       }
 
-      const allParticipantIds = Array.from(new Set([...selectedParticipantIds, paidById]));
+      const allParticipantIds = splitType === 'itemized'
+        ? Array.from(new Set([
+            ...items.flatMap(i => i.participantIds),
+            paidById
+          ]))
+        : Array.from(new Set([...selectedParticipantIds, paidById]));
       const participantRows = allParticipantIds.map(uid => ({
         expense_id: expenseId, user_id: uid, share_amount: shares[uid] ?? 0, is_payer: uid === paidById,
       }));
@@ -416,14 +421,15 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>
-              <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Paid By</label>
-              <select value={paidById} onChange={e => setPaidById(e.target.value)} style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}>
+              <label htmlFor="paidById" className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Paid By</label>
+              <select id="paidById" value={paidById} onChange={e => setPaidById(e.target.value)} style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}>
                 {members.map(m => <option key={m.id} value={m.id}>{m.id === user?.id ? 'You' : m.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Split Type</label>
+              <label htmlFor="splitType" className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Split Type</label>
               <select 
+                id="splitType"
                 value={splitType} 
                 onChange={e => setSplitType(e.target.value)} 
                 disabled={isTreatMode}
@@ -525,10 +531,12 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
                               <div 
                                 key={m.id} 
                                 onClick={() => {
-                                  const newItems = [...items];
-                                  const pIds = newItems[idx].participantIds;
-                                  newItems[idx].participantIds = pIds.includes(m.id) ? pIds.filter(x => x !== m.id) : [...pIds, m.id];
-                                  setItems(newItems);
+                                  setItems(prevItems => {
+                                    const nextItems = [...prevItems];
+                                    const pIds = nextItems[idx].participantIds;
+                                    nextItems[idx].participantIds = pIds.includes(m.id) ? pIds.filter(x => x !== m.id) : [...pIds, m.id];
+                                    return nextItems;
+                                  });
                                 }}
                                 style={{ 
                                   padding: '0.25rem 0.6rem', 
