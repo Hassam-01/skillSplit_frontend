@@ -13,6 +13,7 @@ interface Settlement {
   profiles: {
     display_name: string;
   } | null;
+  group_id: string;
 }
 
 interface SettlementVerificationProps {
@@ -46,7 +47,7 @@ const SettlementVerification: React.FC<SettlementVerificationProps> = ({ settlem
 
       // Create notification for payer
       const settlement = myPending.find(x => x.id === id);
-      if (settlement) {
+      if (settlement && user) {
         const { data: userData } = await supabase.from('profiles').select('display_name').eq('id', user.id).single();
         const payeeName = userData?.display_name ?? 'Someone';
         

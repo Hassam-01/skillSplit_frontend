@@ -29,7 +29,7 @@ const OptimizationCenter = () => {
   const steps = (plan?.steps ?? []) as unknown as (OptimizedPlanStep & { payer: Profile; payee: Profile })[];
   const confirmedSteps = steps.filter(s => s.settlement_id);
   const efficiency = plan?.naive_count && plan?.naive_count > 0 
-    ? Math.round((1 - plan.optimized_count / plan.naive_count) * 100) 
+    ? Math.round((1 - (plan.optimized_count ?? 0) / plan.naive_count) * 100) 
     : 0;
 
   return (
