@@ -152,7 +152,7 @@ const OptimizationCenter = () => {
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {steps.map((step, idx) => {
+                {steps.map((step) => {
                   const payer = step.payer as Profile | null;
                   const payee = step.payee as Profile | null;
                   const settled = !!step.settlement_id;

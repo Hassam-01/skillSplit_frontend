@@ -2,17 +2,16 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, LineChart, Gavel, History, LogOut, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useState } from 'react';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../hooks/useTheme';
 import ConfirmModal from './ConfirmModal';
 import { Sun, Moon } from 'lucide-react';
 
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
-  ThemeToggle?: React.FC;
 }
 
-const Sidebar = ({ isOpen, onClose, ThemeToggle }: SidebarProps) => {
+const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { user, profile, signOut } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();

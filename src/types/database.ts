@@ -49,6 +49,7 @@ export interface Expense {
   groups?: Group;
   expense_participants?: ExpenseParticipant[];
   is_settled: boolean;
+  disputes?: Dispute[];
 }
 
 export interface ExpenseParticipant {

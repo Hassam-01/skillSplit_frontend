@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, XCircle, Clock, Smartphone } from 'lucide-react';
+import { CheckCircle2, XCircle, Smartphone } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -32,7 +32,7 @@ const SettlementVerification: React.FC<SettlementVerificationProps> = ({ settlem
   const handleAction = async (id: string, status: 'confirmed' | 'rejected') => {
     setLoadingId(id);
     try {
-      const updateData: any = { status };
+      const updateData: { status: string; confirmed_at?: string } = { status };
       if (status === 'confirmed') {
         updateData.confirmed_at = new Date().toISOString();
       }
@@ -62,8 +62,8 @@ const SettlementVerification: React.FC<SettlementVerificationProps> = ({ settlem
       }
 
       onAction();
-    } catch (err: any) {
-      alert(`Error: ${err.message}`);
+    } catch (err: unknown) {
+      alert(`Error: ${(err as Error).message}`);
     } finally {
       setLoadingId(null);
     }

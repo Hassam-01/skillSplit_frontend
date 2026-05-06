@@ -2,12 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { UserPlus, LogOut, Trash2, Copy, Check, ChevronUp, Clock, Zap } from 'lucide-react';
 import type { Profile } from '../types/database';
+import type { GroupDetailData, MemberBalance } from '../hooks/useGroupDetail';
+
 
 interface GroupRightSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  data: any;
-  user: any;
+  data: GroupDetailData;
+  user: { id: string } | null;
   isAdmin: boolean;
   isUserInvolved: (userId: string) => boolean;
   onSettleUp: () => void;
@@ -32,7 +34,7 @@ const GroupRightSidebar: React.FC<GroupRightSidebarProps> = ({
 }) => {
   if (!data) return null;
 
-  const activeBalances = data.memberBalances.filter((mb: any) => Math.abs(mb.netBalance) > 0.01);
+  const activeBalances = data.memberBalances.filter((mb: MemberBalance) => Math.abs(mb.netBalance) > 0.01);
 
   return (
     <>
@@ -71,12 +73,12 @@ const GroupRightSidebar: React.FC<GroupRightSidebarProps> = ({
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {activeBalances.map((mb: any) => {
+              {activeBalances.map((mb: MemberBalance) => {
                   const isOwed = mb.netBalance > 0.01;
                   const isOwer = mb.netBalance < -0.01;
                   const statusColor = isOwed ? 'var(--color-success)' : isOwer ? 'var(--color-error)' : 'var(--color-on-surface-variant)';
                   const bgColor = isOwed ? 'var(--color-success-container)' : isOwer ? 'var(--color-error-container)' : 'var(--color-surface-container-lowest)';
-                  const hasPending = data.pendingSettlements.some((s: any) => s.payer_id === user?.id && s.payee_id === mb.userId);
+                  const hasPending = data.pendingSettlements.some((s: { payer_id: string; payee_id: string }) => s.payer_id === user?.id && s.payee_id === mb.userId);
 
                   return (
                     <div key={mb.userId} style={{ 
@@ -146,7 +148,7 @@ const GroupRightSidebar: React.FC<GroupRightSidebarProps> = ({
             </button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
-            {data.members.map((m: any) => {
+            {data.members.map((m) => {
               const profile = m.profiles as unknown as Profile | null;
               return (
                 <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>

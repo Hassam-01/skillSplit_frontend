@@ -65,7 +65,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
         }
       }
     }
-  }, [isOpen, splitType, totalAmount, selectedParticipantIds.length, isTreatMode]);
+  }, [isOpen, splitType, totalAmount, selectedParticipantIds, isTreatMode]);
 
   // Auto-balancing logic
   useEffect(() => {
@@ -104,7 +104,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
         return next;
       });
     }
-  }, [touchedIds, totalAmount, splitType, selectedParticipantIds]);
+  }, [touchedIds, totalAmount, splitType, selectedParticipantIds, exactAmounts, isTreatMode, percentages]);
 
   if (!isOpen) return null;
   if (!groupId || !groupMembers) {
@@ -228,8 +228,8 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
       setDescription(''); setAmount(''); setCategory('other'); setSplitType('equal'); setNotes(''); setIsTreatMode(false);
       setSelectedParticipantIds(user ? [user.id] : []); setExactAmounts({}); setPercentages({}); setTouchedIds(new Set());
       onSaved();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }

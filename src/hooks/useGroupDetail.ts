@@ -19,8 +19,8 @@ export interface GroupDetailData {
   members: GroupMember[];
   expenses: Expense[];
   memberBalances: MemberBalance[];
-  pendingSettlements: any[]; // Adjust type as needed
-  allSettlements: any[];
+  pendingSettlements: { id: string; payer_id: string; payee_id: string; amount: number; payment_method: string; notes: string | null; profiles: { display_name: string } | null; group_id: string }[];
+  allSettlements: { id: string; status: string; payer_id: string; payee_id: string; amount: number; payment_method: string; created_at: string; profiles: { display_name: string } | null }[];
   totalSpending: number;
 }
 
@@ -67,7 +67,7 @@ export function useGroupDetail(groupId: string | undefined) {
 
       (expenses ?? []).forEach(exp => {
         // Check if there's any active dispute
-        const activeDisputes = (exp.disputes as any[])?.filter(d => d.status === 'open' || d.status === 'pending');
+        const activeDisputes = (exp.disputes as { status: string }[])?.filter(d => d.status === 'open' || d.status === 'pending');
         const isDisputed = activeDisputes && activeDisputes.length > 0;
 
         // Skip disputed expenses from balance calculations
@@ -92,8 +92,13 @@ export function useGroupDetail(groupId: string | undefined) {
         .select('id, group_id, payer_id, payee_id, amount, status, payment_method, notes, created_at, profiles!settlements_payer_id_fkey(display_name)')
         .eq('group_id', groupId);
 
-      const confirmedSettlements = allSettlements?.filter(s => s.status === 'confirmed') ?? [];
-      const pendingSettlements = allSettlements?.filter(s => s.status === 'pending') ?? [];
+      const mappedSettlements = (allSettlements ?? []).map(s => ({
+        ...s,
+        profiles: Array.isArray(s.profiles) ? s.profiles[0] : s.profiles
+      }));
+
+      const confirmedSettlements = mappedSettlements.filter(s => s.status === 'confirmed');
+      const pendingSettlements = mappedSettlements.filter(s => s.status === 'pending');
 
       confirmedSettlements.forEach(s => {
         // settlement reduces debt: payer_id was paying payee_id
@@ -125,10 +130,6 @@ export function useGroupDetail(groupId: string | undefined) {
         group_type: group.group_type,
         invite_token: group.invite_token,
         created_at: group.created_at,
-<<<<<<< HEAD
-        members: (members ?? []) as any,
-        expenses: (expenses ?? []) as unknown as Expense[],
-=======
         members: (members ?? []).map(m => ({
           ...m,
           profiles: Array.isArray(m.profiles) ? m.profiles[0] : m.profiles
@@ -142,10 +143,9 @@ export function useGroupDetail(groupId: string | undefined) {
             profiles: Array.isArray(ep.profiles) ? ep.profiles[0] : ep.profiles
           }))
         })) as unknown as Expense[],
->>>>>>> eb92252f72d80b3617a563dcdf981ff82d9086d4
         memberBalances,
-        pendingSettlements,
-        allSettlements: allSettlements ?? [],
+        pendingSettlements: pendingSettlements as unknown as GroupDetailData['pendingSettlements'],
+        allSettlements: mappedSettlements as unknown as GroupDetailData['allSettlements'],
         totalSpending,
       });
     } catch (err: unknown) {

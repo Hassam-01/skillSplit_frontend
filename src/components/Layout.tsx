@@ -1,42 +1,47 @@
 import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import { Menu, Sun, Moon } from 'lucide-react';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../hooks/useTheme';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
+interface ThemeToggleBtnProps {
+  isDark: boolean;
+  toggleTheme: () => void;
+}
+
+const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = ({ isDark, toggleTheme }) => (
+  <button
+    id="theme-toggle-btn"
+    onClick={toggleTheme}
+    title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+    style={{
+      background: 'none',
+      border: '1px solid var(--color-outline-variant)',
+      borderRadius: '50%',
+      width: '36px',
+      height: '36px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      color: 'var(--color-on-surface-variant)',
+      backgroundColor: 'var(--color-surface-container-high)',
+      flexShrink: 0,
+    }}
+  >
+    {isDark
+      ? <Sun size={16} color="var(--color-on-tertiary-container)" />
+      : <Moon size={16} />
+    }
+  </button>
+);
+
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { isDark, toggleTheme } = useTheme();
-
-  const ThemeToggleBtn = () => (
-    <button
-      id="theme-toggle-btn"
-      onClick={toggleTheme}
-      title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-      style={{
-        background: 'none',
-        border: '1px solid var(--color-outline-variant)',
-        borderRadius: '50%',
-        width: '36px',
-        height: '36px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        color: 'var(--color-on-surface-variant)',
-        backgroundColor: 'var(--color-surface-container-high)',
-        flexShrink: 0,
-      }}
-    >
-      {isDark
-        ? <Sun size={16} color="var(--color-on-tertiary-container)" />
-        : <Moon size={16} />
-      }
-    </button>
-  );
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column', backgroundColor: 'var(--color-surface)' }}>
@@ -65,11 +70,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </button>
           <h1 style={{ fontSize: '1.25rem', color: 'var(--color-primary)' }}>SkillSplit</h1>
         </div>
-        <ThemeToggleBtn />
+        <ThemeToggleBtn isDark={isDark} toggleTheme={toggleTheme} />
       </header>
 
       <div style={{ display: 'flex', flex: 1 }}>
-        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} ThemeToggle={ThemeToggleBtn} />
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
         <main
           style={{
             flex: 1,

@@ -78,7 +78,7 @@ export function useOptimization(groupId: string | undefined) {
       const netMap: Record<string, number> = {};
       (expenses ?? []).forEach(exp => {
         // Check if there's any active dispute
-        const activeDisputes = (exp.disputes as any[])?.filter(d => d.status === 'open' || d.status === 'pending');
+        const activeDisputes = (exp.disputes as { status: string }[])?.filter(d => d.status === 'open' || d.status === 'pending');
         const isDisputed = activeDisputes && activeDisputes.length > 0;
 
         // Skip disputed expenses from optimization calculation

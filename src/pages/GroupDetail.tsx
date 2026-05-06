@@ -12,7 +12,6 @@ import {
   ChevronUp,
   CheckCircle,
   Users,
-  XCircle,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useGroupDetail } from "../hooks/useGroupDetail";
@@ -66,9 +65,7 @@ const GroupDetail = () => {
   const [expandedExpenseId, setExpandedExpenseId] = useState<string | null>(
     null,
   );
-  const [expandedParticipantIds, setExpandedParticipantIds] = useState<
-    string[]
-  >([]);
+
 
   const handleRaiseDispute = async (expenseId: string) => {
     if (!user || !disputeReason.trim()) return;
@@ -143,8 +140,8 @@ const GroupDetail = () => {
         refetch();
         setConfirmRemoveMember(null);
       }
-    } catch (err: any) {
-      alert(`Error: ${err.message}`);
+    } catch (err: unknown) {
+      alert(`Error: ${(err as Error).message}`);
     }
   };
 
@@ -206,7 +203,7 @@ const GroupDetail = () => {
     const isSettled = expense.is_settled;
     
     // Check dispute status
-    const activeDisputes = ((expense as any).disputes as any[])?.filter(d => d.status === 'open' || d.status === 'pending');
+    const activeDisputes = expense.disputes?.filter((d: { status: string }) => d.status === 'open' || d.status === 'pending');
     const isDisputed = activeDisputes && activeDisputes.length > 0;
 
     return (
