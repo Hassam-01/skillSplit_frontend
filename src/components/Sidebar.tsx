@@ -158,6 +158,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
           {/* Logout */}
           <button
+            aria-label="Sidebar Logout"
             onClick={() => setIsLogoutConfirmOpen(true)}
             style={{
               display: 'flex',

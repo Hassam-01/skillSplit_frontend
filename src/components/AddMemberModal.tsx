@@ -104,7 +104,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose, groupI
               required
             />
           </div>
-          <button type="submit" className="btn-gradient" style={{ padding: '0.75rem 1rem' }} disabled={loading}>
+          <button type="submit" className="btn-gradient" style={{ padding: '0.75rem 1rem' }} disabled={loading} aria-label="Search">
             {loading ? <Loader size={18} className="animate-spin" /> : <Search size={18} />}
           </button>
         </form>
