@@ -4,11 +4,11 @@ import type { AuditLog, Profile, Group } from '../types/database';
 
 const ACTION_META: Record<string, { icon: React.ReactNode; color: string }> = {
   created_group: { icon: <UserPlus size={18} color="var(--color-primary)" />, color: 'var(--color-primary)' },
-  expense_added: { icon: <PlusCircle size={18} color="#006666" />, color: '#006666' },
-  settlement_created: { icon: <CheckCircle size={18} color="#1b5e20" />, color: '#1b5e20' },
-  dispute_raised: { icon: <AlertCircle size={18} color="#ba1a1a" />, color: '#ba1a1a' },
-  dispute_resolved: { icon: <CheckCircle size={18} color="#1b5e20" />, color: '#1b5e20' },
-  optimization_generated: { icon: <Zap size={18} color="var(--color-primary)" />, color: 'var(--color-primary)' },
+  expense_added: { icon: <PlusCircle size={18} color="var(--color-primary-container)" />, color: 'var(--color-primary-container)' },
+  settlement_created: { icon: <CheckCircle size={18} color="var(--color-success)" />, color: 'var(--color-success)' },
+  dispute_raised: { icon: <AlertCircle size={18} color="var(--color-error)" />, color: 'var(--color-error)' },
+  dispute_resolved: { icon: <CheckCircle size={18} color="var(--color-success)" />, color: 'var(--color-success)' },
+  optimization_generated: { icon: <Zap size={18} color="var(--color-on-tertiary-container)" />, color: 'var(--color-on-tertiary-container)' },
 };
 
 const getActionMeta = (action: string) => ACTION_META[action] ?? { icon: <PlusCircle size={18} color="var(--color-on-surface-variant)" />, color: 'var(--color-on-surface-variant)' };

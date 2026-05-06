@@ -34,7 +34,7 @@ const Signup = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-surface)', backgroundImage: 'radial-gradient(circle at 20% 20%, var(--color-surface-container-low) 0%, transparent 40%), radial-gradient(circle at 80% 80%, var(--color-surface-container-high) 0%, transparent 40%)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-surface)' }}>
       <div style={{ width: '100%', maxWidth: '440px', padding: '2.5rem', backgroundColor: 'var(--color-surface-container-lowest)', borderRadius: 'var(--radius-xl)', boxShadow: '0 20px 50px rgba(0, 76, 76, 0.05)', border: '1px solid var(--color-outline-variant)' }}>
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <div style={{ width: '48px', height: '48px', backgroundColor: 'var(--color-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', color: 'white' }}>

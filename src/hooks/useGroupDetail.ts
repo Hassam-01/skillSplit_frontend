@@ -19,6 +19,8 @@ export interface GroupDetailData {
   members: GroupMember[];
   expenses: Expense[];
   memberBalances: MemberBalance[];
+  pendingSettlements: { id: string; payer_id: string; payee_id: string; amount: number; payment_method: string; notes: string | null; profiles: { display_name: string } | null; group_id: string }[];
+  allSettlements: { id: string; status: string; payer_id: string; payee_id: string; amount: number; payment_method: string; created_at: string; profiles: { display_name: string } | null }[];
   totalSpending: number;
 }
 
@@ -50,9 +52,10 @@ export function useGroupDetail(groupId: string | undefined) {
       // Expenses with participants and payer profile
       const { data: expenses } = await supabase
         .from('expenses')
-        .select(`id, group_id, description, amount, currency, paid_by, split_type, category, is_treat, is_personal, notes, receipt_url, created_by, created_at, updated_at, deleted_at,
+        .select(`id, group_id, description, amount, currency, paid_by, split_type, category, is_treat, is_personal, is_settled, notes, receipt_url, created_by, created_at, updated_at, deleted_at,
           profiles!expenses_paid_by_fkey(id, display_name),
-          expense_participants(id, expense_id, user_id, share_amount, share_percent, is_payer, profiles(id, display_name))`)
+          expense_participants(id, expense_id, user_id, share_amount, share_percent, is_payer, profiles(id, display_name)),
+          disputes(status)`)
         .eq('group_id', groupId)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
@@ -63,6 +66,13 @@ export function useGroupDetail(groupId: string | undefined) {
       let totalSpending = 0;
 
       (expenses ?? []).forEach(exp => {
+        // Check if there's any active dispute
+        const activeDisputes = (exp.disputes as { status: string }[])?.filter(d => d.status === 'open' || d.status === 'pending');
+        const isDisputed = activeDisputes && activeDisputes.length > 0;
+
+        // Skip disputed expenses from balance calculations
+        if (isDisputed) return;
+
         totalSpending += Number(exp.amount);
         const payerId = exp.paid_by;
         const participants = (exp.expense_participants ?? []) as { user_id: string; share_amount: number; is_payer: boolean }[];
@@ -76,13 +86,21 @@ export function useGroupDetail(groupId: string | undefined) {
         });
       });
 
-      // Factor in confirmed settlements
-      const { data: settlements } = await supabase
+      // Settlements
+      const { data: allSettlements } = await supabase
         .from('settlements')
-        .select('payer_id, payee_id, amount')
-        .eq('group_id', groupId)
-        .eq('status', 'confirmed');
-      settlements?.forEach(s => {
+        .select('id, group_id, payer_id, payee_id, amount, status, payment_method, notes, created_at, profiles!settlements_payer_id_fkey(display_name)')
+        .eq('group_id', groupId);
+
+      const mappedSettlements = (allSettlements ?? []).map(s => ({
+        ...s,
+        profiles: Array.isArray(s.profiles) ? s.profiles[0] : s.profiles
+      }));
+
+      const confirmedSettlements = mappedSettlements.filter(s => s.status === 'confirmed');
+      const pendingSettlements = mappedSettlements.filter(s => s.status === 'pending');
+
+      confirmedSettlements.forEach(s => {
         // settlement reduces debt: payer_id was paying payee_id
         if (!debts[s.payer_id]) debts[s.payer_id] = {};
         if (!debts[s.payer_id][s.payee_id]) debts[s.payer_id][s.payee_id] = 0;
@@ -126,6 +144,8 @@ export function useGroupDetail(groupId: string | undefined) {
           }))
         })) as unknown as Expense[],
         memberBalances,
+        pendingSettlements: pendingSettlements as unknown as GroupDetailData['pendingSettlements'],
+        allSettlements: mappedSettlements as unknown as GroupDetailData['allSettlements'],
         totalSpending,
       });
     } catch (err: unknown) {

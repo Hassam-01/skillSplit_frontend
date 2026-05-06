@@ -1,23 +1,21 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, LineChart, Gavel, History, HelpCircle, LogOut, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, LineChart, Gavel, History, LogOut, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useEffect, useState } from 'react';
-import { supabase } from '../utils/supabase';
+import { useState } from 'react';
+import { useTheme } from '../hooks/useTheme';
+import ConfirmModal from './ConfirmModal';
+import { Sun, Moon } from 'lucide-react';
 
-const Sidebar = () => {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { user, profile, signOut } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from('notifications')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('is_read', false)
-      .then(({ count }) => setUnreadCount(count ?? 0));
-  }, [user]);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
@@ -37,66 +35,162 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside style={{ width: '200px', height: '100vh', backgroundColor: 'var(--color-surface-container-low)', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', position: 'fixed', left: 0, top: 0 }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.125rem', color: 'var(--color-primary)' }}>SkillSplit</h1>
-        <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)', marginTop: '0.125rem' }}>Premium Expense Logic</p>
-      </div>
-
-      {/* User profile */}
-      {user && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', backgroundColor: 'var(--color-surface-container-high)', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.75rem', fontWeight: '700', flexShrink: 0 }}>
-            {initials}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <p style={{ fontWeight: '600', fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile?.display_name ?? 'User'}</p>
-            <p style={{ fontSize: '0.65rem', color: 'var(--color-on-surface-variant)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
-          </div>
-        </div>
+    <>
+      {/* Overlay for mobile */}
+      {isOpen && (
+        <div
+          onClick={onClose}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 998,
+          }}
+        />
       )}
 
-      <nav style={{ flex: 1 }}>
-        <ul style={{ listStyle: 'none' }}>
-          {navItems.map((item) => (
-            <li key={item.path} style={{ marginBottom: '0.5rem' }}>
-              <NavLink to={item.path} end={item.path === '/'} style={({ isActive }) => ({ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', textDecoration: 'none', color: isActive ? 'var(--color-primary)' : 'var(--color-on-surface-variant)', backgroundColor: isActive ? 'var(--color-surface-container-high)' : 'transparent', fontWeight: isActive ? '600' : '500', transition: 'all 0.2s ease' })}>
-                {item.icon}
-                <span>{item.label}</span>
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <aside
+        style={{
+          width: '240px',
+          height: '100vh',
+          backgroundColor: 'var(--color-surface-container-lowest)',
+          borderRight: '1px solid var(--color-outline-variant)',
+          padding: '1.5rem 1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          zIndex: 999,
+          transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.3s ease-in-out',
+          boxShadow: isOpen ? '10px 0 30px rgba(0,0,0,0.15)' : 'none',
+          overflowY: 'auto',
+        }}
+        className="sidebar-component"
+      >
+        {/* Logo + close button */}
+        <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 style={{ fontSize: '1.125rem', color: 'var(--color-primary)' }}>SkillSplit</h1>
+            <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)', marginTop: '0.125rem' }}>Premium Expense Logic</p>
+          </div>
+          {/* Close button for mobile */}
+          <button onClick={onClose} className="lg-hide" style={{ background: 'none', border: 'none', color: 'var(--color-on-surface-variant)', cursor: 'pointer' }}>
+            <X size={24} />
+          </button>
+        </div>
 
-      <div style={{ marginTop: 'auto', borderTop: '1px solid var(--color-outline-variant)', paddingTop: '1.5rem' }}>
-        <ul style={{ listStyle: 'none' }}>
-          <li style={{ marginBottom: '0.5rem' }}>
-            <NavLink to="/help" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--color-on-surface-variant)', fontWeight: '500', opacity: 0.7 }}>
-              <HelpCircle size={20} />
-              <span>Help</span>
-            </NavLink>
-          </li>
-          <li style={{ marginBottom: '0.5rem' }}>
-            <NavLink to="/activity" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--color-on-surface-variant)', fontWeight: '500', opacity: 0.7, position: 'relative' }}>
-              <Bell size={20} />
-              <span>Notifications</span>
-              {unreadCount > 0 && (
-                <span style={{ position: 'absolute', top: '0.5rem', left: '1.75rem', backgroundColor: 'var(--color-error)', color: 'white', borderRadius: '50%', width: '16px', height: '16px', fontSize: '0.6rem', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </NavLink>
-          </li>
-          <li>
-            <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)', fontWeight: '600', width: '100%', borderRadius: 'var(--radius-md)', opacity: 0.8 }}>
-              <LogOut size={20} />
-              <span>Logout</span>
-            </button>
-          </li>
-        </ul>
-      </div>
-    </aside>
+        {/* User profile */}
+        {user && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', backgroundColor: 'var(--color-surface-container-high)', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-on-primary)', fontSize: '0.75rem', fontWeight: '700', flexShrink: 0 }}>
+              {initials}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontWeight: '600', fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--color-on-surface)' }}>{profile?.display_name ?? 'User'}</p>
+              <p style={{ fontSize: '0.65rem', color: 'var(--color-on-surface-variant)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Navigation */}
+        <nav style={{ flex: 1 }}>
+          <ul style={{ listStyle: 'none' }}>
+            {navItems.map((item) => (
+              <li key={item.path} style={{ marginBottom: '0.25rem' }}>
+                <NavLink
+                  to={item.path}
+                  end={item.path === '/'}
+                  onClick={onClose}
+                  style={({ isActive }) => ({
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    padding: '0.75rem 1rem',
+                    borderRadius: 'var(--radius-md)',
+                    textDecoration: 'none',
+                    color: isActive ? 'var(--color-primary)' : 'var(--color-on-surface-variant)',
+                    backgroundColor: isActive ? 'var(--color-surface-container-high)' : 'transparent',
+                    fontWeight: isActive ? '600' : '500',
+                    fontSize: '0.9rem',
+                  })}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Bottom actions — theme toggle + logout */}
+        <div style={{ marginTop: 'auto', borderTop: '1px solid var(--color-outline-variant)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          {/* Theme toggle — desktop only (mobile header has one) */}
+          <button
+            id="sidebar-theme-toggle"
+            onClick={toggleTheme}
+            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              padding: '0.75rem 1rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-on-surface-variant)',
+              fontWeight: '500',
+              width: '100%',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.9rem',
+            }}
+          >
+            {isDark
+              ? <Sun size={20} color="var(--color-on-tertiary-container)" />
+              : <Moon size={20} />
+            }
+            <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+          </button>
+
+          {/* Logout */}
+          <button
+            onClick={() => setIsLogoutConfirmOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              padding: '0.75rem 1rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-error)',
+              fontWeight: '600',
+              width: '100%',
+              borderRadius: 'var(--radius-md)',
+              opacity: 0.85,
+              fontSize: '0.9rem',
+            }}
+          >
+            <LogOut size={20} />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      <ConfirmModal
+        isOpen={isLogoutConfirmOpen}
+        onClose={() => setIsLogoutConfirmOpen(false)}
+        onConfirm={handleLogout}
+        title="Logout"
+        message="Are you sure you want to sign out of your account?"
+        confirmText="Logout"
+        type="danger"
+      />
+    </>
   );
 };
 

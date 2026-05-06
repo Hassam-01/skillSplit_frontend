@@ -64,7 +64,7 @@ export function useOptimization(groupId: string | undefined) {
       // Fetch all expenses + participants for group
       const { data: expenses } = await supabase
         .from('expenses')
-        .select('id, paid_by, expense_participants(user_id, share_amount, is_payer)')
+        .select(`id, paid_by, expense_participants(user_id, share_amount, is_payer), disputes(status)`)
         .eq('group_id', groupId)
         .is('deleted_at', null);
 
@@ -77,6 +77,13 @@ export function useOptimization(groupId: string | undefined) {
       // Build net balances
       const netMap: Record<string, number> = {};
       (expenses ?? []).forEach(exp => {
+        // Check if there's any active dispute
+        const activeDisputes = (exp.disputes as { status: string }[])?.filter(d => d.status === 'open' || d.status === 'pending');
+        const isDisputed = activeDisputes && activeDisputes.length > 0;
+
+        // Skip disputed expenses from optimization calculation
+        if (isDisputed) return;
+
         const participants = (exp.expense_participants ?? []) as { user_id: string; share_amount: number; is_payer: boolean }[];
         participants.forEach(ep => {
           if (!netMap[ep.user_id]) netMap[ep.user_id] = 0;
