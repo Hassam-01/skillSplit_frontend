@@ -49,15 +49,21 @@ export function useDisputes() {
       if (dErr) throw dErr;
 
       const result: DisputeWithDetail[] = (rawDisputes ?? []).map(d => {
-        const exp = d.expenses as { description: string; amount: number; group_id: string; groups: { name: string } } | null;
-        const raisedByProfile = d.profiles as { display_name: string | null } | null;
+        const rawExp = Array.isArray(d.expenses) ? d.expenses[0] : d.expenses;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const exp = rawExp as { description: string; amount: number; group_id: string; groups: any } | null;
+        const rawGroup = Array.isArray(exp?.groups) ? exp.groups[0] : exp?.groups;
+        const group = rawGroup as { name: string } | null;
+        
+        const rawRaisedBy = Array.isArray(d.profiles) ? d.profiles[0] : d.profiles;
+        const raisedByProfile = rawRaisedBy as { display_name: string | null } | null;
         return {
           ...d,
-          groupName: exp?.groups?.name,
+          groupName: group?.name,
           expenseDescription: exp?.description,
           expenseAmount: exp?.amount,
           raisedByName: raisedByProfile?.display_name ?? 'Unknown',
-        } as DisputeWithDetail;
+        } as unknown as DisputeWithDetail;
       });
 
       setDisputes(result);

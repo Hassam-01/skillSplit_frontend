@@ -35,7 +35,10 @@ export function useGroups() {
         return;
       }
 
-      const groupIds = memberships.map(m => (m.groups as { id: string }).id);
+      const groupIds = memberships.map(m => {
+        const g = Array.isArray(m.groups) ? m.groups[0] : m.groups;
+        return (g as { id: string }).id;
+      });
 
       // Member counts per group
       const { data: memberCounts } = await supabase
@@ -84,7 +87,8 @@ export function useGroups() {
       });
 
       const result: GroupWithBalance[] = memberships.map(m => {
-        const g = m.groups as { id: string; name: string; description: string | null; group_type: string; invite_token: string | null };
+        const rawG = Array.isArray(m.groups) ? m.groups[0] : m.groups;
+        const g = rawG as { id: string; name: string; description: string | null; group_type: string; invite_token: string | null };
         return {
           id: g.id,
           name: g.name,
@@ -106,7 +110,10 @@ export function useGroups() {
   }, [user]);
 
   useEffect(() => {
-    fetchGroups();
+    const load = async () => {
+      await fetchGroups();
+    };
+    load();
   }, [fetchGroups]);
 
   return { groups, loading, error, refetch: fetchGroups };

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from './utils/supabase';
 
 export default function TestSupabaseTodos() {
-  const [todos, setTodos] = useState([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [todos, setTodos] = useState<any[]>([]);
 
   useEffect(() => {
     async function getTodos() {
