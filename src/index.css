@@ -16,6 +16,9 @@
   --color-on-surface-variant: #3f4948;
   
   --color-error: #ba1a1a;
+  --color-error-container: rgba(186, 26, 26, 0.1);
+  --color-success: #1b5e20;
+  --color-success-container: rgba(27, 94, 32, 0.1);
   
   --color-tertiary-container: #874c2b;
   --color-on-tertiary-container: #ffc8ad;

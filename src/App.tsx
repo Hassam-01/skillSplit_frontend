@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Groups from './pages/Groups';
@@ -9,39 +10,66 @@ import OptimizationCenter from './pages/OptimizationCenter';
 import ActivityLog from './pages/ActivityLog';
 import Disputes from './pages/Disputes';
 
-const AppContent = () => {
+/** Redirects unauthenticated users to /login */
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
   const location = useLocation();
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
 
-  if (isAuthPage) {
+  if (loading) {
     return (
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-      </Routes>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-surface)' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: 'white', fontSize: '1.25rem' }}>S</div>
+          <p style={{ color: 'var(--color-on-surface-variant)', fontWeight: '500' }}>Loading SkillSplit…</p>
+        </div>
+      </div>
     );
   }
 
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return <>{children}</>;
+};
+
+/** Redirects authenticated users away from auth pages */
+const AuthRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) return <Navigate to="/" replace />;
+  return <>{children}</>;
+};
+
+const AppContent = () => {
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/groups" element={<Groups />} />
-        <Route path="/groups/:id" element={<GroupDetail />} />
-        <Route path="/optimize" element={<OptimizationCenter />} />
-        <Route path="/disputes" element={<Disputes />} />
-        <Route path="/activity" element={<ActivityLog />} />
-        <Route path="/help" element={<div className="text-headline-lg">Help Center (Coming Soon)</div>} />
-      </Routes>
-    </Layout>
+    <Routes>
+      {/* Public auth routes */}
+      <Route path="/login" element={<AuthRoute><Login /></AuthRoute>} />
+      <Route path="/signup" element={<AuthRoute><Signup /></AuthRoute>} />
+
+      {/* Protected routes */}
+      <Route path="/" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+      <Route path="/groups" element={<ProtectedRoute><Layout><Groups /></Layout></ProtectedRoute>} />
+      <Route path="/groups/:id" element={<ProtectedRoute><Layout><GroupDetail /></Layout></ProtectedRoute>} />
+      <Route path="/optimize" element={<ProtectedRoute><Layout><OptimizationCenter /></Layout></ProtectedRoute>} />
+      <Route path="/disputes" element={<ProtectedRoute><Layout><Disputes /></Layout></ProtectedRoute>} />
+      <Route path="/activity" element={<ProtectedRoute><Layout><ActivityLog /></Layout></ProtectedRoute>} />
+      <Route path="/help" element={<ProtectedRoute><Layout><div style={{ padding: '2rem' }}><h2 className="text-headline-lg">Help Center</h2><p className="text-body-lg" style={{ marginTop: '0.5rem' }}>Coming Soon. Reach out to your group admin for assistance.</p></div></Layout></ProtectedRoute>} />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 };
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
 }
 

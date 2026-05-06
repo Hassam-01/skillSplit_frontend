@@ -1,0 +1,25 @@
+import { useState, useEffect } from 'react';
+import { supabase } from './utils/supabase';
+
+export default function TestSupabaseTodos() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [todos, setTodos] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function getTodos() {
+      const { data: todos } = await supabase.from('todos').select();
+      if (todos) {
+        setTodos(todos);
+      }
+    }
+    getTodos();
+  }, []);
+
+  return (
+    <ul>
+      {todos.map((todo) => (
+        <li key={todo.id}>{todo.name}</li>
+      ))}
+    </ul>
+  );
+}
