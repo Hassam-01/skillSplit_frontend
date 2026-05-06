@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from './utils/supabase';
 
 export default function TestSupabaseTodos() {
-  const [todos, setTodos] = useState([]);
+  const [todos, setTodos] = useState<any[]>([]);
 
   useEffect(() => {
     async function getTodos() {

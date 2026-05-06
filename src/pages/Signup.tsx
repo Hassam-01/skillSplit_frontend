@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Mail, Lock, ShieldCheck, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
+import { User, Mail, Lock, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 
 const Signup = () => {

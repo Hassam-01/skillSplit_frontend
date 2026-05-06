@@ -96,7 +96,8 @@ export function useGroupDetail(groupId: string | undefined) {
           const theyOweMe = debts[m.user_id]?.[user.id] ?? 0;
           const iOweThem = debts[user.id]?.[m.user_id] ?? 0;
           const net = theyOweMe - iOweThem;
-          const profile = m.profiles as unknown as Profile | null;
+          const rawProfile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+          const profile = rawProfile as unknown as Profile | null;
           return {
             userId: m.user_id,
             displayName: profile?.display_name ?? 'Unknown',
@@ -111,8 +112,18 @@ export function useGroupDetail(groupId: string | undefined) {
         group_type: group.group_type,
         invite_token: group.invite_token,
         created_at: group.created_at,
-        members: (members ?? []) as GroupMember[],
-        expenses: (expenses ?? []) as unknown as Expense[],
+        members: (members ?? []).map(m => ({
+          ...m,
+          profiles: Array.isArray(m.profiles) ? m.profiles[0] : m.profiles
+        })) as unknown as GroupMember[],
+        expenses: (expenses ?? []).map(e => ({
+          ...e,
+          profiles: Array.isArray(e.profiles) ? e.profiles[0] : e.profiles,
+          expense_participants: (e.expense_participants as any[] ?? []).map(ep => ({
+            ...ep,
+            profiles: Array.isArray(ep.profiles) ? ep.profiles[0] : ep.profiles
+          }))
+        })) as unknown as Expense[],
         memberBalances,
         totalSpending,
       });
