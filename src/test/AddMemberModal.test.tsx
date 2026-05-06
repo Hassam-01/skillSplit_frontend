@@ -27,11 +27,10 @@ describe('AddMemberModal Component', () => {
 
     render(<AddMemberModal isOpen={true} onClose={() => {}} groupId="g1" onAdded={() => {}} />);
 
-    const input = screen.getByPlaceholderText(/Search by phone/i);
+    const input = screen.getByPlaceholderText(/Search by phone or name/i);
     fireEvent.change(input, { target: { value: 'New' } });
     
-    const searchBtn = screen.getByRole('button'); // There's only one button in the search form area initially
-    fireEvent.click(searchBtn);
+    fireEvent.click(screen.getByLabelText('Search'));
 
     await waitFor(() => {
       expect(screen.getByText('New User')).toBeInTheDocument();
@@ -64,9 +63,9 @@ describe('AddMemberModal Component', () => {
     render(<AddMemberModal isOpen={true} onClose={() => {}} groupId="g1" onAdded={onAdded} />);
 
     // Trigger search
-    const input = screen.getByPlaceholderText(/Search by phone/i);
+    const input = screen.getByPlaceholderText(/Search by phone or name/i);
     fireEvent.change(input, { target: { value: 'New' } });
-    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(screen.getByLabelText('Search'));
     
     await waitFor(() => screen.getByText('New User'));
 
@@ -92,9 +91,9 @@ describe('AddMemberModal Component', () => {
 
     render(<AddMemberModal isOpen={true} onClose={() => {}} groupId="g1" onAdded={() => {}} />);
 
-    const input = screen.getByPlaceholderText(/Search by phone/i);
+    const input = screen.getByPlaceholderText(/Search by phone or name/i);
     fireEvent.change(input, { target: { value: 'New' } });
-    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(screen.getByLabelText('Search'));
     
     await waitFor(() => screen.getByText('Add'));
     fireEvent.click(screen.getByText('Add'));

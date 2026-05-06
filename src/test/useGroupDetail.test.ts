@@ -95,7 +95,7 @@ describe('useGroupDetail hook', () => {
       if (table === 'expenses') return createChain({ data: [{ paid_by: 'u1', amount: 100, expense_participants: [{ user_id: 'u1', share_amount: 50 }, { user_id: 'u2', share_amount: 50 }] }] });
       if (table === 'settlements') {
           // u2 paid u1 30
-          return createChain({ data: [{ payer_id: 'u2', payee_id: 'u1', amount: 30 }] });
+          return createChain({ data: [{ payer_id: 'u2', payee_id: 'u1', amount: 30, status: 'confirmed' }] });
       }
       return createChain({ data: [] });
     });

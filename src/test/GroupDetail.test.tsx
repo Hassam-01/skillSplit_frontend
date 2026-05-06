@@ -59,7 +59,9 @@ describe('GroupDetail Page', () => {
           { userId: 'u2', displayName: 'Friend', netBalance: 150 }
         ],
         invite_token: 'INV123',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        pendingSettlements: [],
+        allSettlements: [],
       },
       error: null,
       refetch: vi.fn(),
@@ -84,7 +86,7 @@ describe('GroupDetail Page', () => {
     vi.mocked(useAuth).mockReturnValue({ user: { id: 'u1' } } as any);
     vi.mocked(useGroupDetail).mockReturnValue({
       loading: false,
-      data: { id: 'g1', name: 'G', members: [], expenses: [], memberBalances: [], totalSpending: 0, created_at: new Date().toISOString() },
+      data: { id: 'g1', name: 'G', members: [], expenses: [], memberBalances: [], totalSpending: 0, created_at: new Date().toISOString(), pendingSettlements: [], allSettlements: [] },
       error: null,
       refetch: vi.fn(),
     } as any);

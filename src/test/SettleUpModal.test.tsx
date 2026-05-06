@@ -42,7 +42,7 @@ describe('SettleUpModal Component', () => {
   it('sets amount automatically when member is selected', async () => {
     render(<SettleUpModal isOpen={true} onClose={() => {}} onSettled={() => {}} groupId="g1" memberBalances={mockBalances} />);
     
-    const select = screen.getByLabelText(/Pay To/i);
+    const select = screen.getByDisplayValue(/Select member/i);
     fireEvent.change(select, { target: { value: 'u2' } });
 
     const amountInput = screen.getByPlaceholderText('0.00') as HTMLInputElement;
@@ -52,11 +52,18 @@ describe('SettleUpModal Component', () => {
   it('submits settlement correctly', async () => {
     const onSettled = vi.fn();
     const insertMock = vi.fn().mockResolvedValue({ error: null });
-    vi.mocked(supabase.from).mockReturnValue({ insert: insertMock } as any);
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'settlements') return { insert: insertMock } as any;
+      if (table === 'profiles') return { 
+        select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { display_name: 'Me' } }) }) }) 
+      } as any;
+      return { insert: vi.fn(), select: vi.fn() } as any;
+    });
 
     render(<SettleUpModal isOpen={true} onClose={() => {}} onSettled={onSettled} groupId="g1" memberBalances={mockBalances} />);
 
-    fireEvent.change(screen.getByLabelText(/Pay To/i), { target: { value: 'u2' } });
+    const select = screen.getByDisplayValue(/Select member/i);
+    fireEvent.change(select, { target: { value: 'u2' } });
     fireEvent.click(screen.getByText('Confirm Settlement'));
 
     await waitFor(() => {
