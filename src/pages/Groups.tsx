@@ -1,12 +1,18 @@
 import { useState } from 'react';
-import { Users, UserPlus, ShieldCheck, ChevronRight, Plus, AlertCircle, Loader } from 'lucide-react';
+import { Users, UserPlus, ShieldCheck, ChevronRight, Plus, AlertCircle, Loader2, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useGroups } from '../hooks/useGroups';
 import CreateGroupModal from '../components/CreateGroupModal';
 import { supabase } from '../utils/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
-const GROUP_TYPE_EMOJI: Record<string, string> = { trip: '✈️', household: '🏠', office: '💼', event: '🎉', general: '👥' };
+const GROUP_TYPE_EMOJI: Record<string, string> = { 
+  trip: '✈️', 
+  household: '🏠', 
+  office: '💼', 
+  event: '🎉', 
+  general: '👥' 
+};
 
 const Groups = () => {
   const { user } = useAuth();
@@ -18,6 +24,7 @@ const Groups = () => {
   const [joinSuccess, setJoinSuccess] = useState<string | null>(null);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleJoin = async () => {
     if (!user || !inviteCode.trim()) return;
@@ -32,7 +39,6 @@ const Groups = () => {
         .single();
       if (gErr || !group) throw new Error('Invalid invite code. Please check and try again.');
 
-      // Check if already a member
       const { data: existing } = await supabase
         .from('group_members')
         .select('id')
@@ -75,49 +81,119 @@ const Groups = () => {
     }
   };
 
+  const filteredGroups = groups.filter(g => 
+    g.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div>
-      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h2 className="text-headline-lg">Your Groups</h2>
-          <p className="text-body-lg">Manage your shared ledgers and financial alliances.</p>
+    <div className="container" style={{ paddingBottom: '4rem' }}>
+      <header style={{ 
+        marginBottom: '3rem', 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-end',
+        flexWrap: 'wrap',
+        gap: '1.5rem'
+      }}>
+        <div style={{ flex: 1, minWidth: '300px' }}>
+          <h2 className="text-display-lg">Your Alliances</h2>
+          <p className="text-body-lg" style={{ marginTop: '0.5rem' }}>Manage your shared ledgers and financial dynamics.</p>
         </div>
-        <button className="btn-gradient" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setIsCreateOpen(true)}>
-          <Plus size={20} /> Create Group
-        </button>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+           <div style={{ position: 'relative' }} className="sm-hide">
+              <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-on-surface-variant)', opacity: 0.5 }} />
+              <input 
+                type="text" 
+                placeholder="Search alliances…" 
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                style={{
+                  padding: '0.75rem 1rem 0.75rem 2.75rem',
+                  backgroundColor: 'var(--color-surface-container-low)',
+                  border: '1px solid var(--color-outline-variant)',
+                  borderRadius: 'var(--radius-md)',
+                  outline: 'none',
+                  fontSize: '0.9rem',
+                  fontFamily: 'var(--font-body)',
+                  minWidth: '240px'
+                }}
+              />
+           </div>
+           <button className="btn-gradient" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1.5rem' }} onClick={() => setIsCreateOpen(true)}>
+             <Plus size={20} /> New Group
+           </button>
+        </div>
       </header>
 
       <CreateGroupModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} onCreated={refetch} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '3rem' }}>
+      <div className="grid-asymmetric">
         <section>
-          <h3 className="text-title-lg" style={{ marginBottom: '2rem' }}>Your Alliances</h3>
-
           {error && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', backgroundColor: 'rgba(186,26,26,0.06)', borderRadius: 'var(--radius-md)', marginBottom: '1rem', color: 'var(--color-error)' }}>
-              <AlertCircle size={18} /><p style={{ fontSize: '0.875rem' }}>{error}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1.25rem', backgroundColor: 'var(--color-error-container)', borderRadius: 'var(--radius-md)', marginBottom: '2rem', color: 'var(--color-error)', border: '1px solid rgba(186,26,26,0.2)' }}>
+              <AlertCircle size={20} /><p style={{ fontWeight: '500' }}>{error}</p>
             </div>
           )}
 
           {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {[0, 1, 2].map(i => <div key={i} className="surface-lowest" style={{ height: '80px', borderRadius: 'var(--radius-md)', opacity: 0.5 }} />)}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {[0, 1, 2].map(i => (
+                <div key={i} className="surface-lowest" style={{ height: '100px', borderRadius: 'var(--radius-xl)', opacity: 0.5, animation: 'pulse 1.5s infinite ease-in-out' }} />
+              ))}
             </div>
-          ) : groups.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--color-on-surface-variant)' }}>
-              <Users size={48} style={{ marginBottom: '1rem', opacity: 0.3 }} />
-              <p style={{ fontWeight: '600', fontSize: '1.1rem', marginBottom: '0.5rem' }}>No groups yet</p>
-              <p style={{ fontSize: '0.9rem' }}>Create your first group or join one with an invite code.</p>
+          ) : filteredGroups.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '6rem 2rem', color: 'var(--color-on-surface-variant)', border: '2px dashed var(--color-outline-variant)', borderRadius: 'var(--radius-xl)' }}>
+              <Users size={64} style={{ marginBottom: '1.5rem', opacity: 0.15 }} />
+              <p style={{ fontWeight: '700', fontSize: '1.25rem', color: 'var(--color-primary)', marginBottom: '0.5rem' }}>No Active Alliances</p>
+              <p style={{ fontSize: '0.95rem' }}>{searchTerm ? 'No results found for your search.' : 'Create your first group to start tracking expenses.'}</p>
+              {!searchTerm && (
+                <button 
+                  className="btn-secondary" 
+                  style={{ marginTop: '1.5rem', padding: '0.75rem 2rem' }}
+                  onClick={() => setIsCreateOpen(true)}
+                >
+                  Get Started
+                </button>
+              )}
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {groups.map((group) => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {filteredGroups.map((group) => (
                 <Link key={group.id} to={`/groups/${group.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <div className="surface-lowest" style={{ padding: '1.5rem 2.5rem', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', transition: 'transform 0.2s ease' }}
-                    onMouseOver={e => e.currentTarget.style.transform = 'translateX(8px)'}
-                    onMouseOut={e => e.currentTarget.style.transform = 'translateX(0)'}>
-                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                      <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: 'var(--color-surface-container-low)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                  <div className="surface-lowest" style={{ 
+                    padding: '1.5rem 2rem', 
+                    borderRadius: 'var(--radius-xl)', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.03)', 
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    border: '1px solid var(--color-surface-container-high)',
+                    flexWrap: 'wrap',
+                    gap: '1.5rem'
+                  }}
+                    onMouseOver={e => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.borderColor = 'var(--color-primary)';
+                      e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.06)';
+                    }}
+                    onMouseOut={e => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.borderColor = 'var(--color-surface-container-high)';
+                      e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.03)';
+                    }}>
+                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flex: 1, minWidth: '200px' }}>
+                      <div style={{ 
+                        width: '64px', 
+                        height: '64px', 
+                        borderRadius: '20px', 
+                        backgroundColor: 'var(--color-surface-container-low)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        fontSize: '1.75rem',
+                        boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.05)'
+                      }}>
                         {GROUP_TYPE_EMOJI[group.group_type] ?? '👥'}
                       </div>
                       <div>
@@ -130,19 +206,22 @@ const Groups = () => {
                             onKeyDown={(e) => e.key === 'Enter' && handleRename(group.id)}
                             onClick={(e) => e.preventDefault()}
                             style={{ 
-                              fontSize: '1.125rem', 
+                              fontSize: '1.25rem', 
                               fontWeight: '700', 
                               border: 'none', 
                               borderBottom: '2px solid var(--color-primary)', 
                               backgroundColor: 'transparent', 
                               outline: 'none', 
                               padding: '0',
-                              width: '200px' 
+                              width: '100%',
+                              fontFamily: 'var(--font-display)',
+                              color: 'var(--color-primary)'
                             }}
                           />
                         ) : (
                           <h4 
-                            style={{ fontSize: '1.125rem', fontWeight: '700', cursor: 'text' }}
+                            className="text-title-lg"
+                            style={{ fontSize: '1.25rem', cursor: 'text' }}
                             onDoubleClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
@@ -153,19 +232,25 @@ const Groups = () => {
                             {group.name}
                           </h4>
                         )}
-                        <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>{group.member_count} Member{group.member_count !== 1 ? 's' : ''} • {group.group_type}</p>
+                        <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)', marginTop: '0.25rem' }}>
+                          {group.member_count} Members • <span style={{ textTransform: 'capitalize' }}>{group.group_type}</span>
+                        </p>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '3rem', flexShrink: 0 }}>
                       <div style={{ textAlign: 'right' }}>
-                        <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-                          {group.my_balance > 0.01 ? 'You are owed' : group.my_balance < -0.01 ? 'You owe' : 'Settled'}
+                        <p className="text-label-sm" style={{ fontSize: '0.6rem', color: 'var(--color-on-surface-variant)' }}>
+                          {group.my_balance > 0.01 ? 'Owed to you' : group.my_balance < -0.01 ? 'You owe' : 'Settled'}
                         </p>
-                        <p style={{ fontWeight: '700', fontSize: '1.125rem', color: group.my_balance > 0.01 ? '#1b5e20' : group.my_balance < -0.01 ? '#b71c1c' : 'var(--color-on-surface)' }}>
+                        <p style={{ 
+                          fontWeight: '800', 
+                          fontSize: '1.25rem', 
+                          color: group.my_balance > 0.01 ? 'var(--color-success)' : group.my_balance < -0.01 ? 'var(--color-error)' : 'var(--color-on-surface-variant)' 
+                        }}>
                           Rs. {Math.abs(group.my_balance).toLocaleString()}
                         </p>
                       </div>
-                      <ChevronRight size={24} style={{ color: 'var(--color-outline-variant)' }} />
+                      <ChevronRight size={24} style={{ color: 'var(--color-outline-variant)', opacity: 0.5 }} />
                     </div>
                   </div>
                 </Link>
@@ -175,35 +260,92 @@ const Groups = () => {
         </section>
 
         <aside>
-          <div className="surface-high" style={{ padding: '2.5rem', borderRadius: 'var(--radius-xl)', marginBottom: '2rem' }}>
+          <div className="surface-high" style={{ padding: '2.5rem', borderRadius: 'var(--radius-xl)', marginBottom: '2.5rem', boxShadow: '0 8px 30px rgba(0,0,0,0.03)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-              <UserPlus size={24} color="var(--color-primary)" />
-              <h3 className="text-title-lg" style={{ fontSize: '1.125rem' }}>Join with Code</h3>
+              <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'var(--color-surface-container-highest)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <UserPlus size={20} color="var(--color-primary)" />
+              </div>
+              <h3 className="text-title-lg">Join Alliance</h3>
             </div>
-            <p className="text-body-lg" style={{ fontSize: '0.875rem', marginBottom: '1.5rem' }}>Enter a provided invite token to join an existing group.</p>
-            <input type="text" value={inviteCode} onChange={e => setInviteCode(e.target.value)} placeholder="Paste invite token…"
-              style={{ width: '100%', padding: '1rem', backgroundColor: 'var(--color-surface-container-lowest)', border: '1px solid var(--color-outline-variant)', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.9rem', textAlign: 'center', fontWeight: '600', fontFamily: 'var(--font-body)', outline: 'none' }} />
-            {joinError && <p style={{ color: 'var(--color-error)', fontSize: '0.8rem', marginBottom: '0.75rem' }}>{joinError}</p>}
-            {joinSuccess && <p style={{ color: '#1b5e20', fontSize: '0.8rem', marginBottom: '0.75rem', fontWeight: '600' }}>{joinSuccess}</p>}
-            <button className="btn-secondary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} onClick={handleJoin} disabled={joinLoading || !inviteCode.trim()}>
-              {joinLoading ? <Loader size={16} /> : null}
-              {joinLoading ? 'Joining…' : 'Join Alliance'}
+            <p className="text-body-lg" style={{ fontSize: '0.85rem', marginBottom: '1.5rem', lineHeight: '1.6' }}>Enter a unique invite token to join an existing shared ledger.</p>
+            
+            <div style={{ position: 'relative' }}>
+              <input 
+                type="text" 
+                value={inviteCode} 
+                onChange={e => setInviteCode(e.target.value)} 
+                placeholder="Token (e.g. ABC-123)"
+                style={{ 
+                  width: '100%', 
+                  padding: '1rem 1.25rem', 
+                  backgroundColor: 'var(--color-surface-container-lowest)', 
+                  border: '2px solid var(--color-outline-variant)', 
+                  borderRadius: 'var(--radius-md)', 
+                  marginBottom: '1rem', 
+                  fontSize: '1rem', 
+                  textAlign: 'center', 
+                  fontWeight: '700', 
+                  fontFamily: 'var(--font-body)', 
+                  outline: 'none',
+                  letterSpacing: '0.1em',
+                  transition: 'border-color 0.2s ease'
+                }} 
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'var(--color-outline-variant)'}
+              />
+            </div>
+
+            {joinError && (
+              <div style={{ color: 'var(--color-error)', fontSize: '0.8rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '500' }}>
+                <AlertCircle size={14} /> {joinError}
+              </div>
+            )}
+            {joinSuccess && (
+              <div style={{ color: 'var(--color-success)', fontSize: '0.8rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600' }}>
+                <ShieldCheck size={14} /> {joinSuccess}
+              </div>
+            )}
+
+            <button 
+              className="btn-gradient" 
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '1rem' }} 
+              onClick={handleJoin} 
+              disabled={joinLoading || !inviteCode.trim()}
+            >
+              {joinLoading ? <Loader2 size={18} className="animate-spin" /> : <UserPlus size={18} />}
+              {joinLoading ? 'Validating…' : 'Join Alliance'}
             </button>
           </div>
 
-          <div className="surface-low" style={{ padding: '2.5rem', borderRadius: 'var(--radius-xl)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div className="surface-low" style={{ padding: '2.5rem', borderRadius: 'var(--radius-xl)', border: '1px solid var(--color-surface-container-high)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
               <ShieldCheck size={24} color="var(--color-primary)" />
-              <h3 className="text-title-lg" style={{ fontSize: '1.125rem' }}>Verified Groups</h3>
+              <h3 className="text-title-lg" style={{ fontSize: '1rem' }}>Premium Trust</h3>
             </div>
-            <p className="text-body-lg" style={{ fontSize: '0.875rem', color: 'var(--color-on-surface-variant)' }}>
-              All groups on SkillSplit use end-to-end reconciliation to ensure every paisa is accounted for.
+            <p className="text-body-lg" style={{ fontSize: '0.85rem', color: 'var(--color-on-surface-variant)', lineHeight: '1.7' }}>
+              SkillSplit uses proprietary <strong>Balanced Entry</strong> logic to ensure every transaction is reconciled across all participants with zero margin for error.
             </p>
           </div>
         </aside>
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes pulse {
+          0% { opacity: 0.5; }
+          50% { opacity: 0.3; }
+          100% { opacity: 0.5; }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+          animation: spin 1s linear infinite;
+        }
+      `}} />
     </div>
   );
 };
 
 export default Groups;
+

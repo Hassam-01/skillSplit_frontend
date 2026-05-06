@@ -30,7 +30,7 @@ const Disputes = () => {
   const getStatusColor = (status: string) => {
     if (status === 'open' || status === 'pending') return 'var(--color-error)';
     if (status === 'reviewing') return 'var(--color-tertiary-container)';
-    return '#1b5e20';
+    return 'var(--color-success)';
   };
 
   return (
@@ -53,7 +53,7 @@ const Disputes = () => {
         </div>
         <div className="surface-low" style={{ padding: '1rem', borderRadius: 'var(--radius-xl)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ padding: '0.75rem', backgroundColor: 'var(--color-surface-container-high)', borderRadius: '10px' }}>
-            <CheckCircle2 size={18} color="#1b5e20" />
+            <CheckCircle2 size={18} color="var(--color-success)" />
           </div>
           <div>
             <p className="text-label-sm" style={{ fontSize: '0.6rem' }}>Resolved Total</p>
@@ -114,7 +114,7 @@ const Disputes = () => {
                       </div>
                     )}
                     {dispute.resolution_note && (
-                      <p style={{ fontSize: '0.8rem', color: '#1b5e20', marginTop: '0.5rem', fontStyle: 'italic' }}>Resolution: {dispute.resolution_note}</p>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--color-success)', marginTop: '0.5rem', fontStyle: 'italic' }}>Resolution: {dispute.resolution_note}</p>
                     )}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'center' }}>

@@ -47,6 +47,18 @@ const SettleUpModal: React.FC<SettleUpModalProps> = ({ isOpen, onClose, onSettle
       });
       if (sErr) throw sErr;
 
+      // Create notification for payee
+      const { data: userData } = await supabase.from('profiles').select('display_name').eq('id', user.id).single();
+      const payerName = userData?.display_name ?? 'Someone';
+      
+      await supabase.from('notifications').insert({
+        user_id: selectedMemberId,
+        type: 'settlement_pending',
+        title: 'Settlement marked',
+        body: `${payerName} marked Rs. ${parseFloat(amount).toLocaleString()} as paid. Please verify.`,
+        related_id: groupId,
+      });
+
       await logAction({ groupId, actorId: user.id, action: 'settlement_created', targetId: selectedMemberId, targetType: 'profile', newValue: { amount: parseFloat(amount) } });
 
       setSelectedMemberId(''); setAmount(''); setNotes('');
@@ -67,7 +79,7 @@ const SettleUpModal: React.FC<SettleUpModalProps> = ({ isOpen, onClose, onSettle
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(27,29,14,0.4)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(27,29,14,0.4)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
       <div className="surface-lowest" style={{ width: '100%', maxWidth: '420px', borderRadius: 'var(--radius-xl)', padding: '2rem', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-on-surface-variant)' }}>
           <X size={22} />
@@ -95,7 +107,7 @@ const SettleUpModal: React.FC<SettleUpModalProps> = ({ isOpen, onClose, onSettle
                 <span style={{ fontWeight: '700' }}>You</span>
                 <ArrowRight size={18} color="var(--color-primary)" />
                 <span style={{ fontWeight: '700' }}>{selected.displayName}</span>
-                <span style={{ marginLeft: 'auto', color: '#b71c1c', fontWeight: '700' }}>Rs. {Math.abs(selected.netBalance).toLocaleString()}</span>
+                <span style={{ marginLeft: 'auto', color: 'var(--color-error)', fontWeight: '700' }}>Rs. {Math.abs(selected.netBalance).toLocaleString()}</span>
               </div>
             )}
 
