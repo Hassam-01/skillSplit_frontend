@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, within, act } from './test-utils';
+import { render, screen, fireEvent, waitFor, within } from './test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AddExpenseModal from '../components/AddExpenseModal';
 import { supabase } from '../utils/supabase';
@@ -27,7 +27,7 @@ describe('Itemized Splitting', () => {
   });
 
   it('calculates itemized shares correctly and rounds to nearest integer', async () => {
-    const insertMock = vi.fn().mockResolvedValue({ error: null });
+    const upsertMock = vi.fn().mockResolvedValue({ error: null });
     const selectMock = vi.fn().mockReturnValue({
       single: () => Promise.resolve({ data: { id: 'e1' }, error: null })
     });
@@ -37,7 +37,7 @@ describe('Itemized Splitting', () => {
         select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { display_name: 'Me' } }) }) }) 
       } as any;
       if (table === 'expenses') return { insert: () => ({ select: selectMock }) } as any;
-      if (table === 'expense_participants') return { insert: insertMock } as any;
+      if (table === 'expense_participants') return { upsert: upsertMock } as any;
       return { insert: vi.fn().mockResolvedValue({}), select: vi.fn() } as any;
     });
 
@@ -70,18 +70,18 @@ describe('Itemized Splitting', () => {
     fireEvent.click(screen.getByText('Save Expense'));
 
     await waitFor(() => {
-      expect(insertMock).toHaveBeenCalled();
+      expect(upsertMock).toHaveBeenCalled();
     });
   });
 
   it('handles rounding differences for itemized splits', async () => {
-    const insertMock = vi.fn().mockResolvedValue({ error: null });
+    const upsertMock = vi.fn().mockResolvedValue({ error: null });
     vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === 'profiles') return { 
         select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { display_name: 'Me' } }) }) }) 
       } as any;
       if (table === 'expenses') return { insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: { id: 'e1' }, error: null }) }) }) } as any;
-      if (table === 'expense_participants') return { insert: insertMock } as any;
+      if (table === 'expense_participants') return { upsert: upsertMock } as any;
       return { insert: vi.fn().mockResolvedValue({}), select: vi.fn() } as any;
     });
 
@@ -106,8 +106,8 @@ describe('Itemized Splitting', () => {
     fireEvent.click(screen.getByText('Save Expense'));
 
     await waitFor(() => {
-      expect(insertMock).toHaveBeenCalled();
-      const rows = insertMock.mock.calls[0][0];
+      expect(upsertMock).toHaveBeenCalled();
+      const rows = upsertMock.mock.calls[0][0];
       expect(rows.length).toBe(3);
       const total = rows.reduce((sum: number, r: any) => sum + r.share_amount, 0);
       expect(total).toBe(1000); 

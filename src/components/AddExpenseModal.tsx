@@ -251,8 +251,13 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
     e.preventDefault();
     if (!user || !groupId) return;
 
+    const normalizedDescription = description.trim();
     const specialCharRegex = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/;
-    if (specialCharRegex.test(description)) {
+    if (!normalizedDescription) {
+      setError('Description is required.');
+      return;
+    }
+    if (specialCharRegex.test(normalizedDescription)) {
       setError('Description contains invalid special characters.');
       return;
     }
@@ -281,8 +286,6 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
         }).eq('id', existingExpense.id);
         if (eErr) throw eErr;
 
-        // Delete old participants and re-insert (simpler than updating)
-        await supabase.from('expense_participants').delete().eq('expense_id', existingExpense.id);
       } else {
         // Insert new expense
         const { data: expense, error: eErr } = await supabase.from('expenses').insert({
@@ -303,7 +306,24 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
       const participantRows = allParticipantIds.map(uid => ({
         expense_id: expenseId, user_id: uid, share_amount: shares[uid] ?? 0, is_payer: uid === paidById,
       }));
-      const { error: pErr } = await supabase.from('expense_participants').insert(participantRows);
+
+      if (existingExpense) {
+        const previousParticipantIds = new Set((existingExpense.expense_participants ?? []).map(participant => participant.user_id));
+        const nextParticipantIds = new Set(allParticipantIds);
+        const removedParticipantIds = [...previousParticipantIds].filter(participantId => !nextParticipantIds.has(participantId));
+
+        if (removedParticipantIds.length > 0) {
+          const { error: deleteErr } = await supabase
+            .from('expense_participants')
+            .delete()
+            .eq('expense_id', existingExpense.id)
+            .in('user_id', removedParticipantIds);
+
+          if (deleteErr) throw deleteErr;
+        }
+      }
+
+      const { error: pErr } = await supabase.from('expense_participants').upsert(participantRows, { onConflict: 'expense_id,user_id' });
       if (pErr) throw pErr;
 
       const payerName = profile?.display_name ?? 'Someone';
@@ -344,7 +364,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ isOpen, onClose, onSa
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
             <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Description *</label>
-            <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="What was it for?" required style={inputStyle} />
+            <input type="text" value={description} onChange={e => { setDescription(e.target.value); setError(null); }} placeholder="What was it for?" required style={inputStyle} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

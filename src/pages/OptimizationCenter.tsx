@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ShieldCheck, ArrowRight, Zap, Info, RefreshCw, AlertCircle, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { useOptimization } from '../hooks/useOptimization';
@@ -26,7 +26,8 @@ const OptimizationCenter = () => {
     if (selectedGroupId) fetchLatestPlan();
   }, [selectedGroupId, fetchLatestPlan]);
 
-  const steps = (plan?.steps ?? []) as unknown as (OptimizedPlanStep & { payer: Profile; payee: Profile })[];
+  const steps = (plan?.steps ?? []) as unknown as (OptimizedPlanStep & { payer: Profile; payee: Profile; details?: { from: string; to: string; expenseId: string; description: string | null; amount: number }[] })[];
+  const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const confirmedSteps = steps.filter(s => s.settlement_id);
   const efficiency = plan?.naive_count && plan?.naive_count > 0 
     ? Math.round((1 - (plan.optimized_count ?? 0) / plan.naive_count) * 100) 
@@ -156,8 +157,11 @@ const OptimizationCenter = () => {
                   const payer = step.payer as Profile | null;
                   const payee = step.payee as Profile | null;
                   const settled = !!step.settlement_id;
+                  const details = (step as any).details as { expenseId: string; description: string | null; amount: number; side: 'owes' | 'is_owed' }[] | undefined;
+                  const expanded = expandedStepId === step.id;
                   
                   return (
+                    <Fragment key={step.id}>
                     <div 
                       key={step.id} 
                       className="surface-lowest" 
@@ -216,8 +220,33 @@ const OptimizationCenter = () => {
                             Pay Now
                           </button>
                         )}
+                        <button 
+                          className="btn-secondary" 
+                          style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem' }}
+                          onClick={() => setExpandedStepId(expanded ? null : step.id)}
+                        >
+                          {expanded ? 'Hide details' : 'Show details'}
+                        </button>
                       </div>
                     </div>
+                    {details && details.length > 0 && expanded && (
+                      <div style={{ marginTop: '0.75rem', padding: '0.9rem 1rem', backgroundColor: 'var(--color-surface)', borderRadius: 'var(--radius-sm)', width: '100%', border: '1px solid var(--color-outline-variant)' }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.75rem' }}>Why this settlement exists</div>
+                        <div style={{ display: 'grid', gap: '0.5rem' }}>
+                          <ul style={{ margin: 0, paddingLeft: '1rem' }}>
+                            {details.map((d) => (
+                              <li key={`${step.id}-${d.expenseId}-${d.from}-${d.to}`} style={{ fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+                                "{d.description ?? 'Untitled'}" — Rs. {Number(d.amount).toLocaleString()} — {d.fromName ?? d.from} → {d.toName ?? d.to}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div style={{ marginTop: '0.75rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: 700 }}>
+                          Net settlement: Rs. {Number(step.amount).toLocaleString()}
+                        </div>
+                      </div>
+                    )}
+                    </Fragment>
                   );
                 })}
               </div>
