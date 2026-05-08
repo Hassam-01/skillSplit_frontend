@@ -259,8 +259,8 @@ const Groups = () => {
           )}
         </section>
 
-        <aside>
-          <div className="surface-high" style={{ padding: '2.5rem', borderRadius: 'var(--radius-xl)', marginBottom: '2.5rem', boxShadow: '0 8px 30px rgba(0,0,0,0.03)' }}>
+        <aside style={{ alignSelf: 'start' }}>
+          <div className="surface-high" style={{ padding: '2.5rem', borderRadius: 'var(--radius-xl)', marginBottom: '2.5rem', boxShadow: '0 8px 30px rgba(0,0,0,0.03)', position: 'sticky', top: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'var(--color-surface-container-highest)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <UserPlus size={20} color="var(--color-primary)" />

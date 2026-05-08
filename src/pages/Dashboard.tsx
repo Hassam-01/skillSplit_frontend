@@ -141,7 +141,7 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Summary */}
-        <div className="surface-high" style={{ padding: '2.5rem', borderRadius: 'var(--radius-xl)', height: 'fit-content' }}>
+        <div className="surface-high" style={{ padding: '2.5rem', borderRadius: 'var(--radius-xl)', height: 'fit-content', position: 'sticky', top: '1rem', alignSelf: 'start' }}>
           <h3 className="text-title-lg" style={{ marginBottom: '1.5rem' }}>Quick Summary</h3>
           <p style={{ marginBottom: '2rem', color: 'var(--color-on-surface-variant)', fontSize: '0.9rem' }}>
             {stats.pendingSettlementsCount > 0 || stats.openDisputesCount > 0

@@ -5,6 +5,16 @@ import { useOptimization } from '../hooks/useOptimization';
 import { useGroups } from '../hooks/useGroups';
 import type { OptimizedPlanStep, Profile } from '../types/database';
 
+type StepDetail = {
+  from: string;
+  to: string;
+  fromName?: string | null;
+  toName?: string | null;
+  expenseId: string;
+  description: string | null;
+  amount: number;
+};
+
 const OptimizationCenter = () => {
   const { groups, loading: groupsLoading } = useGroups();
   const [searchParams] = useSearchParams();
@@ -26,7 +36,7 @@ const OptimizationCenter = () => {
     if (selectedGroupId) fetchLatestPlan();
   }, [selectedGroupId, fetchLatestPlan]);
 
-  const steps = (plan?.steps ?? []) as unknown as (OptimizedPlanStep & { payer: Profile; payee: Profile; details?: { from: string; to: string; expenseId: string; description: string | null; amount: number }[] })[];
+  const steps = (plan?.steps ?? []) as unknown as (OptimizedPlanStep & { payer: Profile; payee: Profile; details?: StepDetail[] })[];
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const confirmedSteps = steps.filter(s => s.settlement_id);
   const efficiency = plan?.naive_count && plan?.naive_count > 0 
@@ -157,7 +167,7 @@ const OptimizationCenter = () => {
                   const payer = step.payer as Profile | null;
                   const payee = step.payee as Profile | null;
                   const settled = !!step.settlement_id;
-                  const details = (step as any).details as { expenseId: string; description: string | null; amount: number; side: 'owes' | 'is_owed' }[] | undefined;
+                  const details = (step as any).details as StepDetail[] | undefined;
                   const expanded = expandedStepId === step.id;
                   
                   return (
@@ -254,8 +264,8 @@ const OptimizationCenter = () => {
           )}
         </section>
 
-        <aside>
-          <div className="surface-high" style={{ padding: '2rem', borderRadius: 'var(--radius-xl)', position: 'sticky', top: '2rem' }}>
+        <aside style={{ alignSelf: 'start' }}>
+          <div className="surface-high" style={{ padding: '2rem', borderRadius: 'var(--radius-xl)', position: 'sticky', top: '1rem' }}>
             <h3 className="text-title-lg" style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <Info size={20} style={{ color: 'var(--color-primary)' }} /> How it works
             </h3>
