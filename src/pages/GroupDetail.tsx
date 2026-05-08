@@ -12,8 +12,10 @@ import {
   ChevronUp,
   CheckCircle,
   Users,
+  Copy,
+  Zap,
 } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useGroupDetail } from "../hooks/useGroupDetail";
 import { useAuth } from "../contexts/AuthContext";
 import AddExpenseModal from "../components/AddExpenseModal";
@@ -25,6 +27,8 @@ import ConfirmModal from "../components/ConfirmModal";
 import SettlementVerification from "../components/SettlementVerification";
 import { logAction } from "../utils/auditLog";
 import GroupRightSidebar from "../components/GroupRightSidebar";
+import PoolsList from "../components/PoolsList";
+import CreatePoolModal from "../components/CreatePoolModal";
 
 const CATEGORY_EMOJI: Record<string, string> = {
   dining: "🍽️",
@@ -43,6 +47,7 @@ const getCatEmoji = (cat: string | null) =>
 
 const GroupDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { data, loading, error, refetch } = useGroupDetail(id);
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
@@ -65,6 +70,9 @@ const GroupDetail = () => {
   const [expandedExpenseId, setExpandedExpenseId] = useState<string | null>(
     null,
   );
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [isCreatePoolOpen, setIsCreatePoolOpen] = useState(false);
+  const [detailTab, setDetailTab] = useState<'active' | 'settled' | 'pools' | 'members'>('active');
 
 
   const handleRaiseDispute = async (expenseId: string) => {
@@ -135,7 +143,7 @@ const GroupDetail = () => {
       if (rmErr) throw rmErr;
 
       if (isSelf) {
-        window.location.href = "/groups";
+        navigate("/groups", { replace: true });
       } else {
         refetch();
         setConfirmRemoveMember(null);
@@ -145,7 +153,7 @@ const GroupDetail = () => {
     }
   };
 
-  if (loading)
+  if (loading && !data)
     return (
       <div
         style={{
@@ -181,17 +189,13 @@ const GroupDetail = () => {
     month: "short",
     year: "numeric",
   });
-  const isUserInvolved = (userId: string) =>
-    data.expenses.some(
-      (e) =>
-        e.paid_by === userId ||
-        e.expense_participants?.some((p) => p.user_id === userId),
-    );
   const isAdmin =
     data.members.find((m) => m.user_id === user?.id)?.role === "admin";
 
   const activeExpenses = data.expenses.filter((e) => !e.is_settled);
   const settledExpenses = data.expenses.filter((e) => e.is_settled);
+  const pendingCount = data.pendingSettlements.length;
+  const memberCount = data.members.length;
 
   const renderExpenseItem = (expense: Expense) => {
     const myParticipant = expense.expense_participants?.find(
@@ -406,6 +410,29 @@ const GroupDetail = () => {
                         <CheckCircle size={14} />
                       )}{" "}
                       {isSettled ? "Mark Active" : "Mark Settled"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingExpense(expense);
+                        setIsExpenseOpen(true);
+                        setRaiseDisputeId(null);
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        width: "100%",
+                        padding: "0.6rem 0.75rem",
+                        background: "none",
+                        border: "none",
+                        textAlign: "left",
+                        cursor: "pointer",
+                        fontSize: "0.875rem",
+                        borderRadius: "var(--radius-md)",
+                        color: "var(--color-primary)",
+                      }}
+                    >
+                      <Zap size={14} /> Edit Expense
                     </button>
                     <button
                       onClick={() => setConfirmDeleteExpenseId(expense.id)}
@@ -671,7 +698,7 @@ const GroupDetail = () => {
   };
 
   return (
-    <div style={{ position: "relative" }}>
+    <div className="group-detail-shell" style={{ position: "relative", height: "calc(100vh - 2rem)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Right Sidebar Toggle Button - Fixed on mobile/med */}
       <button
         className="btn-gradient lg-hide"
@@ -703,7 +730,7 @@ const GroupDetail = () => {
           gap: "0.5rem",
           color: "var(--color-on-surface-variant)",
           textDecoration: "none",
-          marginBottom: "2rem",
+          marginBottom: "0.85rem",
           fontWeight: "600",
         }}
       >
@@ -714,17 +741,40 @@ const GroupDetail = () => {
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "flex-end",
-          marginBottom: "2rem",
+          alignItems: "flex-start",
+          marginBottom: "0.9rem",
           flexWrap: "wrap",
           gap: "1rem",
         }}
       >
-        <div>
-          <h2 className="text-headline-lg">{data.name}</h2>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <h2 className="text-headline-lg" style={{ margin: 0 }}>{data.name}</h2>
+            {data.invite_token && (
+              <button
+                onClick={copyInviteToken}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.45rem 0.75rem',
+                  borderRadius: '999px',
+                  border: '1px solid var(--color-outline-variant)',
+                  backgroundColor: 'var(--color-surface-container-lowest)',
+                  color: 'var(--color-primary)',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+                title="Copy invite link"
+              >
+                <Copy size={14} /> Invite {copied ? 'Copied' : 'Link'}
+              </button>
+            )}
+          </div>
           <p
             className="text-label-sm"
-            style={{ color: "var(--color-on-surface-variant)" }}
+            style={{ color: "var(--color-on-surface-variant)", marginTop: '0.35rem' }}
           >
             {data.members.length} Member{data.members.length !== 1 ? "s" : ""} •
             Created {createdDate}
@@ -741,31 +791,51 @@ const GroupDetail = () => {
             </p>
           )}
         </div>
-        <div style={{ textAlign: "right" }}>
-          <p
-            className="text-label-sm"
-            style={{
-              color: "var(--color-on-surface-variant)",
-              marginBottom: "0.125rem",
-            }}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+          <button
+            className="btn-gradient"
+            onClick={() => setIsSettleOpen(true)}
+            style={{ padding: '0.7rem 1.1rem', whiteSpace: 'nowrap' }}
           >
-            Total Spending
-          </p>
-          <h3 style={{ fontSize: "1.5rem", color: "var(--color-primary)" }}>
-            Rs. {data.totalSpending.toLocaleString()}
-          </h3>
+            Settle Up
+          </button>
         </div>
       </header>
 
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.75rem', marginBottom: '0.9rem' }}>
+        <div className="surface-lowest" style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-outline-variant)' }}>
+          <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)', marginBottom: '0.35rem' }}>Total spending</p>
+          <p style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--color-primary)' }}>Rs. {data.totalSpending.toLocaleString()}</p>
+        </div>
+        <div className="surface-lowest" style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-outline-variant)' }}>
+          <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)', marginBottom: '0.35rem' }}>Active expenses</p>
+          <p style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--color-primary)' }}>{activeExpenses.length}</p>
+        </div>
+        <div className="surface-lowest" style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-outline-variant)' }}>
+          <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)', marginBottom: '0.35rem' }}>Members</p>
+          <p style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--color-primary)' }}>{memberCount}</p>
+        </div>
+        <div className="surface-lowest" style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-outline-variant)' }}>
+          <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)', marginBottom: '0.35rem' }}>Pending settlements</p>
+          <p style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--color-primary)' }}>{pendingCount}</p>
+        </div>
+      </div>
+
       <AddExpenseModal
         isOpen={isExpenseOpen}
-        onClose={() => setIsExpenseOpen(false)}
+        onClose={() => {
+          setIsExpenseOpen(false);
+          setEditingExpense(null);
+        }}
         onSaved={() => {
           setIsExpenseOpen(false);
+          setEditingExpense(null);
           refetch();
         }}
         groupId={id}
         groupMembers={data.members as GroupMember[]}
+        existingExpense={editingExpense || undefined}
       />
       <SettleUpModal
         isOpen={isSettleOpen}
@@ -783,104 +853,173 @@ const GroupDetail = () => {
         groupId={id!}
         onAdded={refetch}
       />
+      <CreatePoolModal
+        isOpen={isCreatePoolOpen}
+        onClose={() => setIsCreatePoolOpen(false)}
+        groupId={id!}
+        onCreated={refetch}
+      />
 
-      <div className="grid-asymmetric" style={{ display: "grid", gap: "3rem" }}>
-        <section>
+      <div className="grid-asymmetric" style={{ display: "grid", gap: "1.25rem", flex: 1, minHeight: 0, alignItems: 'stretch' }}>
+        <section style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%', gap: '0.9rem' }}>
           <SettlementVerification
             settlements={data.pendingSettlements}
             onAction={refetch}
           />
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "2rem",
-            }}
-          >
-            <h3 className="text-title-lg">Active Expenses</h3>
-            <button
-              className="btn-gradient"
-              style={{ padding: "0.5rem 1.5rem" }}
-              onClick={() => setIsExpenseOpen(true)}
-            >
-              Add New
-            </button>
+          <div className="surface-lowest" style={{ padding: '0.75rem', borderRadius: 'var(--radius-xl)', border: '1px solid var(--color-outline-variant)' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {([
+                { id: 'active', label: `Active (${activeExpenses.length})` },
+                { id: 'settled', label: `Settled (${settledExpenses.length})` },
+                { id: 'members', label: `Members (${memberCount})` },
+                { id: 'pools', label: 'Event Pools' },
+              ] as const).map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setDetailTab(tab.id)}
+                  style={{
+                    border: 'none',
+                    cursor: 'pointer',
+                    borderRadius: '999px',
+                    padding: '0.7rem 1rem',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    backgroundColor: detailTab === tab.id ? 'var(--color-primary)' : 'transparent',
+                    color: detailTab === tab.id ? 'var(--color-on-primary)' : 'var(--color-on-surface-variant)',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {activeExpenses.length === 0 ? (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "4rem 2rem",
-                color: "var(--color-on-surface-variant)",
-                backgroundColor: "var(--color-surface-container-low)",
-                borderRadius: "var(--radius-md)",
-                marginBottom: "2rem",
-              }}
-            >
-              <p style={{ fontWeight: "600" }}>No active expenses</p>
-              <p style={{ fontSize: "0.9rem" }}>
-                Everything is currently settled or no expenses added yet.
-              </p>
-            </div>
-          ) : (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.5rem",
-                marginBottom: "3rem",
-              }}
-            >
-              {activeExpenses.map(renderExpenseItem)}
-            </div>
-          )}
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div className="surface-low" style={{ padding: '1.1rem', borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.04)', border: '1px solid var(--color-surface-container-high)' }}>
+              {detailTab === 'active' && (
+                <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '0.9rem' }}>
+                    <div>
+                      <h3 className="text-title-lg">Active Expenses</h3>
+                      <p className="text-body-lg" style={{ fontSize: '0.82rem' }}>A clean, focused list of items still in motion.</p>
+                    </div>
+                    <button className="btn-gradient" style={{ padding: '0.5rem 1.1rem', whiteSpace: 'nowrap' }} onClick={() => setIsExpenseOpen(true)}>
+                      Add New
+                    </button>
+                  </div>
 
-          {settledExpenses.length > 0 && (
-            <div>
-              <div
-                onClick={() => setIsSettledCollapsed(!isSettledCollapsed)}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "1.5rem",
-                  padding: "0.5rem 1rem",
-                  backgroundColor: "var(--color-surface-container-high)",
-                  borderRadius: "var(--radius-md)",
-                  cursor: "pointer",
-                }}
-              >
-                <h3
-                  className="text-title-md"
-                  style={{
-                    color: "var(--color-on-surface-variant)",
-                    margin: 0,
-                  }}
-                >
-                  Settled Expenses ({settledExpenses.length})
-                </h3>
-                {isSettledCollapsed ? (
-                  <ChevronDown size={20} />
-                ) : (
-                  <ChevronUp size={20} />
-                )}
-              </div>
-              {!isSettledCollapsed && (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "1.5rem",
-                  }}
-                >
-                  {settledExpenses.map(renderExpenseItem)}
+                  {activeExpenses.length === 0 ? (
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container-low)', borderRadius: 'var(--radius-lg)', minHeight: '220px' }}>
+                      <div>
+                        <p style={{ fontWeight: 700, marginBottom: '0.35rem' }}>No active expenses</p>
+                        <p style={{ fontSize: '0.9rem' }}>Everything is currently settled or no expenses added yet.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ flex: 1, minHeight: 0, maxHeight: '100%', overflowY: 'auto', paddingRight: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      {activeExpenses.map(renderExpenseItem)}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {detailTab === 'settled' && (
+                <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '0.9rem' }}>
+                    <div>
+                      <h3 className="text-title-lg">Settled Expenses</h3>
+                      <p className="text-body-lg" style={{ fontSize: '0.82rem' }}>Historical items kept compact.</p>
+                    </div>
+                    <button className="btn-secondary" style={{ padding: '0.5rem 1.1rem' }} onClick={() => setIsSettledCollapsed(!isSettledCollapsed)}>
+                      {isSettledCollapsed ? 'Show list' : 'Collapse'}
+                    </button>
+                  </div>
+
+                  {settledExpenses.length === 0 ? (
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container-low)', borderRadius: 'var(--radius-lg)', minHeight: '220px' }}>
+                      <div>
+                        <p style={{ fontWeight: 700, marginBottom: '0.35rem' }}>No settled expenses yet</p>
+                        <p style={{ fontSize: '0.9rem' }}>Settled items will appear here after verification.</p>
+                      </div>
+                    </div>
+                  ) : isSettledCollapsed ? (
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-on-surface-variant)', backgroundColor: 'var(--color-surface-container-low)', borderRadius: 'var(--radius-lg)', minHeight: '280px' }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <p style={{ fontWeight: 700, marginBottom: '0.35rem' }}>{settledExpenses.length} settled expenses hidden</p>
+                        <p style={{ fontSize: '0.9rem' }}>Open the list to review historical items.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      {settledExpenses.map(renderExpenseItem)}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {detailTab === 'members' && (
+                <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '0.9rem' }}>
+                    <div>
+                      <h3 className="text-title-lg">Members</h3>
+                      <p className="text-body-lg" style={{ fontSize: '0.82rem' }}>Everyone in the group with a compact status view.</p>
+                    </div>
+                    <button className="btn-secondary" style={{ padding: '0.5rem 1.1rem' }} onClick={() => setIsAddMemberOpen(true)}>
+                      + Add Member
+                    </button>
+                  </div>
+
+                    <div style={{ flex: 1, minHeight: 0, maxHeight: '100%', overflowY: 'auto', paddingRight: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {data.members.map((member) => {
+                      const profile = member.profiles as unknown as Profile | null;
+                      const isCurrentUser = member.user_id === user?.id;
+                      return (
+                        <div key={member.id} className="surface-lowest" style={{ padding: '0.95rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-outline-variant)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'var(--color-surface-container-high)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700 }}>
+                              {(profile?.display_name ?? '?')[0]}
+                            </div>
+                            <div>
+                              <p style={{ fontWeight: 700 }}>{profile?.display_name ?? 'Unknown'}</p>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--color-on-surface-variant)' }}>{member.role}{isCurrentUser ? ' • you' : ''}</p>
+                            </div>
+                          </div>
+                          {isAdmin && !isCurrentUser && (
+                            <button
+                              onClick={() => setConfirmRemoveMember({ id: member.id, user_id: member.user_id, displayName: profile?.display_name ?? 'Unknown' })}
+                              style={{ background: 'none', border: 'none', color: 'var(--color-outline-variant)', cursor: 'pointer' }}
+                              title="Remove member"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {detailTab === 'pools' && (
+                <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '0.9rem' }}>
+                    <div>
+                      <h3 className="text-title-lg">Event Pools</h3>
+                      <p className="text-body-lg" style={{ fontSize: '0.82rem' }}>A focused space for pooled goals and contributions.</p>
+                    </div>
+                    <button className="btn-secondary" style={{ padding: '0.5rem 1.1rem', fontSize: '0.875rem' }} onClick={() => setIsCreatePoolOpen(true)}>
+                      + New Pool
+                    </button>
+                  </div>
+
+                  <div style={{ flex: 1, minHeight: 0, maxHeight: '100%', overflowY: 'auto', paddingRight: '0.4rem' }}>
+                    <PoolsList groupId={id!} />
+                  </div>
                 </div>
               )}
             </div>
-          )}
+          </div>
         </section>
 
         <GroupRightSidebar
@@ -888,15 +1027,25 @@ const GroupDetail = () => {
           onClose={() => setIsRightSidebarOpen(false)}
           data={data}
           user={user}
-          isAdmin={isAdmin}
-          isUserInvolved={isUserInvolved}
-          onSettleUp={() => setIsSettleOpen(true)}
-          onAddMember={() => setIsAddMemberOpen(true)}
-          onRemoveMember={setConfirmRemoveMember}
-          copyInviteToken={copyInviteToken}
-          copied={copied}
         />
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 1024px) {
+          .group-detail-shell {
+            height: auto !important;
+            overflow: visible !important;
+          }
+        }
+        @media (max-width: 600px) {
+          .group-detail-shell {
+            min-height: calc(100vh - 1rem);
+          }
+          .group-detail-shell > div[style*="grid-template-columns: repeat(4, minmax(0, 1fr))"] {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+        }
+      `}} />
 
       <ConfirmModal
         isOpen={!!confirmDeleteExpenseId}

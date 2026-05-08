@@ -92,6 +92,9 @@ button, a, [class*="btn-"] {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Ensure root fills viewport so flex layout can constrain children */
+html, #root { height: 100%; }
+
 /* Scrollbar Styling */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--color-surface); }

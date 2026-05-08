@@ -21,13 +21,15 @@ const SettleUpModal: React.FC<SettleUpModalProps> = ({ isOpen, onClose, onSettle
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [notes, setNotes] = useState('');
+  const [isSettleLater, setIsSettleLater] = useState(false);
+  const [dueDate, setDueDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  // Only show members you owe (negative balance)
-  const membersYouOwe = memberBalances.filter(m => m.netBalance < -0.01);
+  // Only show members who are owed money (positive balance)
+  const membersYouOwe = memberBalances.filter(m => m.netBalance > 0.01);
   const selected = memberBalances.find(m => m.userId === selectedMemberId);
 
   const handleSettle = async (e: React.FormEvent) => {
@@ -43,7 +45,8 @@ const SettleUpModal: React.FC<SettleUpModalProps> = ({ isOpen, onClose, onSettle
         amount: parseFloat(amount),
         payment_method: paymentMethod,
         notes: notes.trim() || null,
-        status: 'pending',
+        status: isSettleLater ? 'pending' : 'completed',
+        due_date: isSettleLater ? dueDate : null,
       });
       if (sErr) throw sErr;
 
@@ -95,8 +98,8 @@ const SettleUpModal: React.FC<SettleUpModalProps> = ({ isOpen, onClose, onSettle
         ) : (
           <form onSubmit={handleSettle} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div>
-              <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Pay To</label>
-              <select value={selectedMemberId} onChange={e => { setSelectedMemberId(e.target.value); const m = membersYouOwe.find(x => x.userId === e.target.value); if (m) setAmount(Math.abs(m.netBalance).toFixed(2)); }} style={{ ...inputStyle, cursor: 'pointer' }} required>
+              <label htmlFor="payTo" className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Pay To</label>
+              <select id="payTo" value={selectedMemberId} onChange={e => { setSelectedMemberId(e.target.value); const m = membersYouOwe.find(x => x.userId === e.target.value); if (m) setAmount(Math.abs(m.netBalance).toFixed(2)); }} style={{ ...inputStyle, cursor: 'pointer' }} required>
                 <option value="">Select member…</option>
                 {membersYouOwe.map(m => <option key={m.userId} value={m.userId}>{m.displayName} — Rs. {Math.abs(m.netBalance).toLocaleString()}</option>)}
               </select>
@@ -112,8 +115,8 @@ const SettleUpModal: React.FC<SettleUpModalProps> = ({ isOpen, onClose, onSettle
             )}
 
             <div>
-              <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Amount (PKR)</label>
-              <input type="number" min="1" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required style={inputStyle} />
+              <label htmlFor="amount" className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Amount (PKR)</label>
+              <input id="amount" type="number" min="1" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required style={inputStyle} />
             </div>
 
             <div>
@@ -127,6 +130,26 @@ const SettleUpModal: React.FC<SettleUpModalProps> = ({ isOpen, onClose, onSettle
               <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Notes (optional)</label>
               <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add a note…" style={inputStyle} />
             </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', backgroundColor: 'var(--color-surface-container-low)', borderRadius: 'var(--radius-md)', cursor: 'pointer' }} onClick={() => setIsSettleLater(!isSettleLater)}>
+              <input id="settleLater" type="checkbox" checked={isSettleLater} onChange={() => setIsSettleLater(!isSettleLater)} style={{ cursor: 'pointer' }} />
+              <label htmlFor="settleLater" style={{ fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }}>Settle Later (Schedule payment)</label>
+            </div>
+
+            {isSettleLater && (
+              <div>
+                <label htmlFor="dueDate" className="text-label-sm" style={{ display: 'block', marginBottom: '0.5rem' }}>Due Date</label>
+                <input 
+                  id="dueDate"
+                  type="date" 
+                  required={isSettleLater}
+                  value={dueDate} 
+                  onChange={e => setDueDate(e.target.value)} 
+                  style={inputStyle} 
+                  min={new Date().toISOString().split('T')[0]} 
+                />
+              </div>
+            )}
 
             {error && <p style={{ color: 'var(--color-error)', fontSize: '0.875rem' }}>{error}</p>}
 

@@ -13,14 +13,28 @@ export interface GroupWithBalance {
   invite_token: string | null;
 }
 
+type GroupsCache = {
+  userId: string;
+  groups: GroupWithBalance[];
+};
+
+let groupsCache: GroupsCache | null = null;
+
 export function useGroups() {
   const { user } = useAuth();
   const [groups, setGroups] = useState<GroupWithBalance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchGroups = useCallback(async () => {
+  const fetchGroups = useCallback(async (force = false) => {
     if (!user) return;
+    if (!force && groupsCache?.userId === user.id) {
+      setGroups(groupsCache.groups);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -32,6 +46,7 @@ export function useGroups() {
       if (mErr) throw mErr;
       if (!memberships || memberships.length === 0) {
         setGroups([]);
+        groupsCache = { userId: user.id, groups: [] };
         return;
       }
 
@@ -102,6 +117,7 @@ export function useGroups() {
       });
 
       setGroups(result);
+      groupsCache = { userId: user.id, groups: result };
     } catch (err: unknown) {
       setError((err as Error).message);
     } finally {
@@ -116,5 +132,7 @@ export function useGroups() {
     load();
   }, [fetchGroups]);
 
-  return { groups, loading, error, refetch: fetchGroups };
+  const refetch = useCallback(() => fetchGroups(true), [fetchGroups]);
+
+  return { groups, loading, error, refetch };
 }

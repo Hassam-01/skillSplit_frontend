@@ -56,8 +56,9 @@ describe('Dashboard Page', () => {
 
     render(<Dashboard />);
 
-    // Assert Quick Summary
-    expect(screen.getByText('You have 1 pending settlement.')).toBeInTheDocument();
+    // Assert redesigned dashboard sections
+    expect(screen.getByText('Recent Activity')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /notifications/i })).toBeInTheDocument();
     
     // Assert Stats
     expect(screen.getAllByText('Rs. 50').length).toBeGreaterThanOrEqual(1); // Net Balance and You are owed

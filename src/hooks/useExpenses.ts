@@ -12,6 +12,14 @@ export interface DashboardStats {
   openDisputesCount: number;
 }
 
+type ExpensesCache = {
+  userId: string;
+  recentExpenses: Expense[];
+  stats: DashboardStats;
+};
+
+let expensesCache: ExpensesCache | null = null;
+
 export function useExpenses() {
   const { user } = useAuth();
   const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
@@ -22,8 +30,16 @@ export function useExpenses() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (force = false) => {
     if (!user) return;
+    if (!force && expensesCache?.userId === user.id) {
+      setRecentExpenses(expensesCache.recentExpenses);
+      setStats(expensesCache.stats);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -104,7 +120,19 @@ export function useExpenses() {
         pendingSettlementsCount: pendingCount ?? 0,
         openDisputesCount: disputeCount ?? 0,
       });
-      setRecentExpenses((recent ?? []) as unknown as Expense[]);
+      const mappedRecent = (recent ?? []) as unknown as Expense[];
+      const mappedStats: DashboardStats = {
+        youAreOwed,
+        youOwe,
+        totalBalance: youAreOwed - youOwe,
+        groupCount: groupIds.length,
+        pendingSettlementsCount: pendingCount ?? 0,
+        openDisputesCount: disputeCount ?? 0,
+      };
+
+      setStats(mappedStats);
+      setRecentExpenses(mappedRecent);
+      expensesCache = { userId: user.id, recentExpenses: mappedRecent, stats: mappedStats };
     } catch (err: unknown) {
       setError((err as Error).message);
     } finally {
@@ -116,5 +144,7 @@ export function useExpenses() {
     fetchData();
   }, [fetchData]);
 
-  return { recentExpenses, stats, loading, error, refetch: fetchData };
+  const refetch = useCallback(() => fetchData(true), [fetchData]);
+
+  return { recentExpenses, stats, loading, error, refetch };
 }

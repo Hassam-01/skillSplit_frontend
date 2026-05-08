@@ -78,9 +78,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <main
           style={{
             flex: 1,
+            minHeight: 0, /* allow flex child to shrink and enable internal scrolling */
             padding: '1.5rem var(--spacing-container)',
             maxWidth: '100vw',
             overflowX: 'hidden',
+            overflowY: 'auto', /* make main scrollable instead of the whole page extending */
+            WebkitOverflowScrolling: 'touch',
             color: 'var(--color-on-surface)',
           }}
           className="main-content"

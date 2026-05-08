@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useGroupDetail } from '../hooks/useGroupDetail';
+import { __resetGroupDetailCacheForTests, useGroupDetail } from '../hooks/useGroupDetail';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../utils/supabase';
 
@@ -17,6 +17,7 @@ vi.mock('../utils/supabase', () => ({
 describe('useGroupDetail hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    __resetGroupDetailCacheForTests();
     vi.mocked(useAuth).mockReturnValue({ user: { id: 'u1' } } as any);
   });
 

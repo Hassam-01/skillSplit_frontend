@@ -21,7 +21,7 @@ vi.mock('../utils/supabase', () => ({
 
 describe('SettleUpModal Component', () => {
   const mockBalances = [
-    { userId: 'u2', displayName: 'Friend', netBalance: -150 } // You owe Friend 150
+    { userId: 'u2', displayName: 'Friend', netBalance: 150 } // Friend is owed 150
   ];
 
   beforeEach(() => {
@@ -35,17 +35,17 @@ describe('SettleUpModal Component', () => {
   });
 
   it('renders list of people you owe', () => {
-    render(<SettleUpModal isOpen={true} onClose={() => {}} onSettled={() => {}} groupId="g1" memberBalances={mockBalances} />);
+    render(<SettleUpModal isOpen={true} onClose={() => {}} onSettled={() => {}} groupId="g1" memberBalances={mockBalances as any} />);
     expect(screen.getByText(/Friend — Rs. 150/i)).toBeInTheDocument();
   });
 
   it('sets amount automatically when member is selected', async () => {
-    render(<SettleUpModal isOpen={true} onClose={() => {}} onSettled={() => {}} groupId="g1" memberBalances={mockBalances} />);
+    render(<SettleUpModal isOpen={true} onClose={() => {}} onSettled={() => {}} groupId="g1" memberBalances={mockBalances as any} />);
     
-    const select = screen.getByDisplayValue(/Select member/i);
+    const select = screen.getByLabelText(/Pay To/i);
     fireEvent.change(select, { target: { value: 'u2' } });
 
-    const amountInput = screen.getByPlaceholderText('0.00') as HTMLInputElement;
+    const amountInput = screen.getByLabelText(/Amount/i) as HTMLInputElement;
     expect(amountInput.value).toBe('150.00');
   });
 
@@ -60,9 +60,9 @@ describe('SettleUpModal Component', () => {
       return { insert: vi.fn(), select: vi.fn() } as any;
     });
 
-    render(<SettleUpModal isOpen={true} onClose={() => {}} onSettled={onSettled} groupId="g1" memberBalances={mockBalances} />);
+    render(<SettleUpModal isOpen={true} onClose={() => {}} onSettled={onSettled} groupId="g1" memberBalances={mockBalances as any} />);
 
-    const select = screen.getByDisplayValue(/Select member/i);
+    const select = screen.getByLabelText(/Pay To/i);
     fireEvent.change(select, { target: { value: 'u2' } });
     fireEvent.click(screen.getByText('Confirm Settlement'));
 
@@ -74,7 +74,7 @@ describe('SettleUpModal Component', () => {
       payer_id: 'u1',
       payee_id: 'u2',
       amount: 150,
-      status: 'pending'
+      status: 'completed'
     }));
     
     expect(logAction).toHaveBeenCalled();

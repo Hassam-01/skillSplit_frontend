@@ -11,14 +11,28 @@ export interface DisputeWithDetail extends Dispute {
   resolvedByName?: string;
 }
 
+type DisputesCache = {
+  userId: string;
+  disputes: DisputeWithDetail[];
+};
+
+let disputesCache: DisputesCache | null = null;
+
 export function useDisputes() {
   const { user } = useAuth();
   const [disputes, setDisputes] = useState<DisputeWithDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDisputes = useCallback(async () => {
+  const fetchDisputes = useCallback(async (force = false) => {
     if (!user) return;
+    if (!force && disputesCache?.userId === user.id) {
+      setDisputes(disputesCache.disputes);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -28,7 +42,11 @@ export function useDisputes() {
         .select('group_id')
         .eq('user_id', user.id);
       const groupIds = (memberships ?? []).map(m => m.group_id);
-      if (groupIds.length === 0) { setDisputes([]); return; }
+      if (groupIds.length === 0) {
+        setDisputes([]);
+        disputesCache = { userId: user.id, disputes: [] };
+        return;
+      }
 
       // Get all expenses in user's groups
       const { data: groupExpenses } = await supabase
@@ -36,7 +54,11 @@ export function useDisputes() {
         .select('id')
         .in('group_id', groupIds);
       const expenseIds = (groupExpenses ?? []).map(e => e.id);
-      if (expenseIds.length === 0) { setDisputes([]); return; }
+      if (expenseIds.length === 0) {
+        setDisputes([]);
+        disputesCache = { userId: user.id, disputes: [] };
+        return;
+      }
 
       // Disputes for those expenses
       const { data: rawDisputes, error: dErr } = await supabase
@@ -67,6 +89,7 @@ export function useDisputes() {
       });
 
       setDisputes(result);
+      disputesCache = { userId: user.id, disputes: result };
     } catch (err: unknown) {
       setError((err as Error).message);
     } finally {
@@ -80,7 +103,7 @@ export function useDisputes() {
       .from('disputes')
       .update({ status: 'resolved', resolved_by: user.id, resolution_note: note, resolved_at: new Date().toISOString() })
       .eq('id', disputeId);
-    if (!error) await fetchDisputes();
+    if (!error) await fetchDisputes(true);
     return error;
   };
 
@@ -89,7 +112,7 @@ export function useDisputes() {
       .from('disputes')
       .update({ status: 'dismissed' })
       .eq('id', disputeId);
-    if (!error) await fetchDisputes();
+    if (!error) await fetchDisputes(true);
     return error;
   };
 
@@ -97,5 +120,7 @@ export function useDisputes() {
     fetchDisputes();
   }, [fetchDisputes]);
 
-  return { disputes, loading, error, refetch: fetchDisputes, resolveDispute, dismissDispute };
+  const refetch = useCallback(() => fetchDisputes(true), [fetchDisputes]);
+
+  return { disputes, loading, error, refetch, resolveDispute, dismissDispute };
 }

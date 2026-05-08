@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 
 const Signup = () => {
+  const navigate = useNavigate();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,7 +21,7 @@ const Signup = () => {
     // Insert profile row
     if (data.user) {
       await supabase.from('profiles').upsert({ id: data.user.id, display_name: displayName.trim() || null });
-      window.location.href = '/'; 
+      navigate('/', { replace: true });
     }
     setLoading(false);
   };
