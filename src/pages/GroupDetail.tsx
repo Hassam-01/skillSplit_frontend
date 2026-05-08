@@ -189,12 +189,6 @@ const GroupDetail = () => {
     month: "short",
     year: "numeric",
   });
-  const isUserInvolved = (userId: string) =>
-    data.expenses.some(
-      (e) =>
-        e.paid_by === userId ||
-        e.expense_participants?.some((p) => p.user_id === userId),
-    );
   const isAdmin =
     data.members.find((m) => m.user_id === user?.id)?.role === "admin";
 
@@ -993,7 +987,7 @@ const GroupDetail = () => {
                           </div>
                           {isAdmin && !isCurrentUser && (
                             <button
-                              onClick={() => onRemoveMember({ id: member.id, user_id: member.user_id, displayName: profile?.display_name ?? 'Unknown' })}
+                              onClick={() => setConfirmRemoveMember({ id: member.id, user_id: member.user_id, displayName: profile?.display_name ?? 'Unknown' })}
                               style={{ background: 'none', border: 'none', color: 'var(--color-outline-variant)', cursor: 'pointer' }}
                               title="Remove member"
                             >

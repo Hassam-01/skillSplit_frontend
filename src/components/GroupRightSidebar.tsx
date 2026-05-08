@@ -1,6 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronUp, Clock, Zap } from 'lucide-react';
+import { ChevronUp, Clock } from 'lucide-react';
 import type { GroupDetailData, MemberBalance } from '../hooks/useGroupDetail';
 
 

@@ -31,6 +31,10 @@ type GroupDetailCache = {
 
 let groupDetailCache: GroupDetailCache | null = null;
 
+export function __resetGroupDetailCacheForTests() {
+  groupDetailCache = null;
+}
+
 export function useGroupDetail(groupId: string | undefined) {
   const { user } = useAuth();
   const [data, setData] = useState<GroupDetailData | null>(null);
