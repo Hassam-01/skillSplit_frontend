@@ -44,16 +44,16 @@ const OptimizationCenter = () => {
     : 0;
 
   return (
-    <div className="container" style={{ paddingBottom: '4rem' }}>
-      <header style={{ marginBottom: '2rem' }}>
+    <div className="container" style={{ paddingBottom: '1.5rem' }}>
+      <header style={{ marginBottom: '1.25rem' }}>
         <h2 className="text-display-lg">Optimization Center</h2>
-        <p className="text-body-lg" style={{ maxWidth: '600px', marginTop: '0.5rem' }}>
+        <p className="text-body-lg" style={{ maxWidth: '560px', marginTop: '0.35rem', fontSize: '0.9rem' }}>
           Minimize transactions and settle group balances efficiently through consolidated debt optimization.
         </p>
       </header>
 
       {/* Group Selector */}
-      <div style={{ marginBottom: '2.5rem', maxWidth: '400px', position: 'relative' }}>
+      <div style={{ marginBottom: '1.25rem', maxWidth: '360px', position: 'relative' }}>
         <label className="text-label-sm" style={{ display: 'block', marginBottom: '0.75rem', color: 'var(--color-primary)' }}>Select Active Group</label>
         {groupsLoading ? (
           <div className="surface-low" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', color: 'var(--color-on-surface-variant)' }}>Loading groups…</div>
@@ -66,11 +66,11 @@ const OptimizationCenter = () => {
               onChange={e => setSelectedGroupId(e.target.value)}
               style={{ 
                 width: '100%', 
-                padding: '1rem 3rem 1rem 1.25rem', 
+                padding: '0.85rem 2.8rem 0.85rem 1rem', 
                 backgroundColor: 'var(--color-surface-container-low)', 
                 border: '1px solid var(--color-outline-variant)', 
                 borderRadius: 'var(--radius-md)', 
-                fontSize: '1rem', 
+                fontSize: '0.92rem', 
                 appearance: 'none', 
                 cursor: 'pointer', 
                 fontFamily: 'var(--font-body)', 
@@ -92,16 +92,16 @@ const OptimizationCenter = () => {
         </div>
       )}
 
-      <div className="grid-asymmetric">
+      <div className="grid-asymmetric" style={{ gap: '1rem', alignItems: 'start' }}>
         <section>
           {/* Algorithm Status Card */}
-          <div className="surface-lowest" style={{ padding: '2rem', borderRadius: 'var(--radius-xl)', marginBottom: '2.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.03)', border: '1px solid var(--color-surface-container-high)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div className="surface-lowest" style={{ padding: '1.15rem', borderRadius: 'var(--radius-xl)', marginBottom: '1.25rem', boxShadow: '0 4px 14px rgba(0,0,0,0.03)', border: '1px solid var(--color-surface-container-high)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
               <div>
-                <h3 className="text-headline-lg">Smart Settle Algorithm</h3>
+                <h3 className="text-headline-lg" style={{ fontSize: '1.05rem' }}>Smart Settle</h3>
                 {plan && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-success)', marginTop: '0.5rem' }}>
-                    <ShieldCheck size={18} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-success)', marginTop: '0.35rem' }}>
+                    <ShieldCheck size={16} />
                     <span className="text-label-sm" style={{ fontSize: '0.7rem' }}>{plan.is_confirmed ? 'Plan Confirmed' : 'Analysis Complete'}</span>
                   </div>
                 )}
@@ -109,43 +109,43 @@ const OptimizationCenter = () => {
               {plan && (
                 <div style={{ textAlign: 'right' }}>
                   <p className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>Efficiency Gain</p>
-                  <p style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-primary)' }}>{efficiency}%</p>
+                  <p style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--color-primary)' }}>{efficiency}%</p>
                 </div>
               )}
             </div>
 
             {plan ? (
-              <div style={{ backgroundColor: 'var(--color-surface)', padding: '2rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <div style={{ backgroundColor: 'var(--color-surface)', padding: '0.95rem 1rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', border: '1px solid var(--color-outline-variant)' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '2.5rem', fontWeight: '700', color: 'var(--color-on-surface-variant)', opacity: 0.3 }}>{plan.naive_count ?? '?'}</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: '700', color: 'var(--color-on-surface-variant)', opacity: 0.75 }}>{plan.naive_count ?? '?'}</div>
                     <p className="text-label-sm">Standard Path</p>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                    <ArrowRight size={32} style={{ color: 'var(--color-primary)', opacity: 0.5 }} />
-                    <Zap size={20} style={{ color: 'var(--color-primary)' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <ArrowRight size={18} style={{ color: 'var(--color-primary)', opacity: 0.7 }} />
+                    <Zap size={14} style={{ color: 'var(--color-primary)' }} />
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '4rem', fontWeight: '900', color: 'var(--color-primary)', lineHeight: 1 }}>{plan.optimized_count ?? steps.length}</div>
+                    <div style={{ fontSize: '2rem', fontWeight: '900', color: 'var(--color-primary)', lineHeight: 1 }}>{plan.optimized_count ?? steps.length}</div>
                     <p className="text-label-sm" style={{ fontWeight: '700', color: 'var(--color-primary)' }}>Optimized Steps</p>
                   </div>
                 </div>
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--color-on-surface-variant)', border: '2px dashed var(--color-outline-variant)', borderRadius: 'var(--radius-md)', marginBottom: '2rem' }}>
-                <RefreshCw size={40} style={{ margin: '0 auto 1.5rem', opacity: 0.2 }} />
-                <p style={{ fontSize: '1.1rem', fontWeight: '500' }}>Ready to optimize group debts</p>
-                <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>Generate a plan to find the most efficient payment routes.</p>
+              <div style={{ textAlign: 'center', padding: '1.4rem 1rem', color: 'var(--color-on-surface-variant)', border: '1px dashed var(--color-outline-variant)', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}>
+                <RefreshCw size={24} style={{ margin: '0 auto 0.65rem', opacity: 0.35 }} />
+                <p style={{ fontSize: '0.96rem', fontWeight: '600' }}>Ready to optimize group debts</p>
+                <p style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>Generate a compact settlement plan.</p>
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-              <button className="btn-gradient" onClick={generatePlan} disabled={loading || !selectedGroupId} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+              <button className="btn-gradient" onClick={generatePlan} disabled={loading || !selectedGroupId} style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', padding: '0.55rem 1rem', fontSize: '0.84rem' }}>
                 <RefreshCw size={18} className={loading ? 'animate-spin' : ''} /> 
                 {loading ? 'Analyzing Data…' : 'Generate Optimization'}
               </button>
               {plan && !plan.is_confirmed && (
-                <button className="btn-secondary" onClick={confirmPlan} disabled={loading} style={{ padding: '0.75rem 1.5rem' }}>
+                <button className="btn-secondary" onClick={confirmPlan} disabled={loading} style={{ padding: '0.55rem 1rem', fontSize: '0.84rem' }}>
                   Lock & Confirm Plan
                 </button>
               )}
@@ -155,14 +155,14 @@ const OptimizationCenter = () => {
           {/* Payment Steps Section */}
           {steps.length > 0 && (
             <div style={{ animation: 'slideIn 0.4s ease-out' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem' }}>
                 <h3 className="text-title-lg">Recommended Settlements</h3>
                 <span className="text-label-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
                   {confirmedSteps.length} of {steps.length} Complete
                 </span>
               </div>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
                 {steps.map((step) => {
                   const payer = step.payer as Profile | null;
                   const payee = step.payee as Profile | null;
@@ -176,7 +176,7 @@ const OptimizationCenter = () => {
                       key={step.id} 
                       className="surface-lowest" 
                       style={{ 
-                        padding: '1.25rem 1.5rem', 
+                        padding: '0.9rem 1rem', 
                         borderRadius: 'var(--radius-md)', 
                         display: 'flex', 
                         justifyContent: 'space-between', 
@@ -186,10 +186,10 @@ const OptimizationCenter = () => {
                         borderLeft: settled ? '4px solid var(--color-success)' : '4px solid var(--color-primary)',
                         transition: 'all 0.3s ease',
                         flexWrap: 'wrap',
-                        gap: '1.5rem'
+                        gap: '0.8rem'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1, minWidth: '250px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', flex: 1, minWidth: '220px' }}>
                         <div style={{ textAlign: 'center', minWidth: '80px' }}>
                           <p style={{ fontWeight: '700', fontSize: '0.9rem' }}>{payer?.display_name ?? 'Unknown'}</p>
                           <p className="text-label-sm" style={{ fontSize: '0.6rem', color: 'var(--color-on-surface-variant)' }}>Payer</p>
@@ -208,10 +208,10 @@ const OptimizationCenter = () => {
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', justifyContent: 'flex-end', flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'flex-end', flexShrink: 0 }}>
                         <div style={{ textAlign: 'right' }}>
                           <p className="text-label-sm" style={{ fontSize: '0.55rem', color: 'var(--color-on-surface-variant)' }}>Settlement Amount</p>
-                          <p style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--color-primary)' }}>
+                          <p style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--color-primary)' }}>
                             Rs. {Number(step.amount).toLocaleString()}
                           </p>
                         </div>
@@ -223,7 +223,7 @@ const OptimizationCenter = () => {
                         ) : (
                           <button 
                             className="btn-gradient" 
-                            style={{ padding: '0.6rem 1.25rem', fontSize: '0.85rem', minWidth: '100px' }} 
+                            style={{ padding: '0.45rem 0.95rem', fontSize: '0.78rem', minWidth: '88px' }} 
                             onClick={() => settleStep(step as unknown as OptimizedPlanStep)} 
                             disabled={loading}
                           >
@@ -232,7 +232,7 @@ const OptimizationCenter = () => {
                         )}
                         <button 
                           className="btn-secondary" 
-                          style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem' }}
+                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.72rem' }}
                           onClick={() => setExpandedStepId(expanded ? null : step.id)}
                         >
                           {expanded ? 'Hide details' : 'Show details'}
@@ -265,43 +265,43 @@ const OptimizationCenter = () => {
         </section>
 
         <aside style={{ alignSelf: 'start' }}>
-          <div className="surface-high" style={{ padding: '2rem', borderRadius: 'var(--radius-xl)', position: 'sticky', top: '1rem' }}>
-            <h3 className="text-title-lg" style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div className="surface-high" style={{ padding: '1.15rem', borderRadius: 'var(--radius-xl)', position: 'sticky', top: '1rem', border: '1px solid var(--color-outline-variant)' }}>
+            <h3 className="text-title-lg" style={{ marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.55rem', fontSize: '1rem' }}>
               <Info size={20} style={{ color: 'var(--color-primary)' }} /> How it works
             </h3>
-            <p className="text-body-lg" style={{ fontSize: '0.85rem', color: 'var(--color-on-surface-variant)', lineHeight: '1.7' }}>
+            <p className="text-body-lg" style={{ fontSize: '0.8rem', color: 'var(--color-on-surface-variant)', lineHeight: '1.55' }}>
               Our proprietary <strong>Smart Settle</strong> algorithm analyzes every expense in your group to find the absolute minimum number of payments required.
             </p>
-            <ul style={{ padding: 0, marginTop: '1.5rem', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-               <li style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem' }}>
+            <ul style={{ padding: 0, marginTop: '0.9rem', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+               <li style={{ display: 'flex', gap: '0.6rem', fontSize: '0.78rem' }}>
                   <div style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>01</div>
                   <p>Preserves everyone's net position exactly—no one pays more than they owe.</p>
                </li>
-               <li style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem' }}>
+               <li style={{ display: 'flex', gap: '0.6rem', fontSize: '0.78rem' }}>
                   <div style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>02</div>
                   <p>Eliminates redundant "circular" payments between friends.</p>
                </li>
-               <li style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem' }}>
+               <li style={{ display: 'flex', gap: '0.6rem', fontSize: '0.78rem' }}>
                   <div style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>03</div>
                   <p>Reduces JazzCash/EasyPaisa transaction fees by consolidating amounts.</p>
                </li>
             </ul>
 
             {plan && (
-              <div style={{ marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid var(--color-outline-variant)' }}>
-                <p className="text-label-sm" style={{ marginBottom: '1rem', color: 'var(--color-primary)' }}>Live Statistics</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.9rem' }}>
+              <div style={{ marginTop: '1rem', paddingTop: '0.85rem', borderTop: '1px solid var(--color-outline-variant)' }}>
+                <p className="text-label-sm" style={{ marginBottom: '0.65rem', color: 'var(--color-primary)' }}>Live Statistics</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.55rem', fontSize: '0.82rem' }}>
                   <span>Completed</span>
                   <span style={{ fontWeight: '700', color: 'var(--color-success)' }}>{confirmedSteps.length} / {steps.length}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                   <span>Status</span>
                   <span style={{ fontWeight: '700', color: plan.is_confirmed ? 'var(--color-success)' : 'var(--color-on-surface-variant)' }}>
                     {plan.is_confirmed ? 'LOCKED' : 'DRAFT'}
                   </span>
                 </div>
                 
-                <div style={{ marginTop: '1.5rem', height: '8px', backgroundColor: 'var(--color-surface-container-highest)', borderRadius: '10px', overflow: 'hidden' }}>
+                <div style={{ marginTop: '0.85rem', height: '6px', backgroundColor: 'var(--color-surface-container-highest)', borderRadius: '10px', overflow: 'hidden' }}>
                    <div style={{ width: `${(confirmedSteps.length / (steps.length || 1)) * 100}%`, height: '100%', backgroundColor: 'var(--color-success)', transition: 'width 0.5s ease' }}></div>
                 </div>
               </div>
