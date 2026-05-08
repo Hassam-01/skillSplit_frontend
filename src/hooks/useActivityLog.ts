@@ -8,6 +8,13 @@ export interface ActivityGroup {
   items: AuditLog[];
 }
 
+type ActivityCache = {
+  userId: string;
+  activityGroups: ActivityGroup[];
+};
+
+let activityCache: ActivityCache | null = null;
+
 function formatDay(dateStr: string): string {
   const d = new Date(dateStr);
   const today = new Date();
@@ -24,8 +31,15 @@ export function useActivityLog() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchActivity = useCallback(async () => {
+  const fetchActivity = useCallback(async (force = false) => {
     if (!user) return;
+    if (!force && activityCache?.userId === user.id) {
+      setActivityGroups(activityCache.activityGroups);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -34,7 +48,11 @@ export function useActivityLog() {
         .select('group_id')
         .eq('user_id', user.id);
       const groupIds = (memberships ?? []).map(m => m.group_id);
-      if (groupIds.length === 0) { setActivityGroups([]); return; }
+      if (groupIds.length === 0) {
+        setActivityGroups([]);
+        activityCache = { userId: user.id, activityGroups: [] };
+        return;
+      }
 
       const { data: logs, error: lErr } = await supabase
         .from('audit_log')
@@ -53,7 +71,9 @@ export function useActivityLog() {
         dayMap[day].push(log as unknown as AuditLog);
       });
 
-      setActivityGroups(Object.entries(dayMap).map(([day, items]) => ({ day, items })));
+      const mapped = Object.entries(dayMap).map(([day, items]) => ({ day, items }));
+      setActivityGroups(mapped);
+      activityCache = { userId: user.id, activityGroups: mapped };
     } catch (err: unknown) {
       setError((err as Error).message);
     } finally {
@@ -65,5 +85,7 @@ export function useActivityLog() {
     fetchActivity();
   }, [fetchActivity]);
 
-  return { activityGroups, loading, error, refetch: fetchActivity };
+  const refetch = useCallback(() => fetchActivity(true), [fetchActivity]);
+
+  return { activityGroups, loading, error, refetch };
 }

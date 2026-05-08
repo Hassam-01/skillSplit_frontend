@@ -15,7 +15,7 @@ import {
   Copy,
   Zap,
 } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useGroupDetail } from "../hooks/useGroupDetail";
 import { useAuth } from "../contexts/AuthContext";
 import AddExpenseModal from "../components/AddExpenseModal";
@@ -47,6 +47,7 @@ const getCatEmoji = (cat: string | null) =>
 
 const GroupDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { data, loading, error, refetch } = useGroupDetail(id);
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
@@ -142,7 +143,7 @@ const GroupDetail = () => {
       if (rmErr) throw rmErr;
 
       if (isSelf) {
-        window.location.href = "/groups";
+        navigate("/groups", { replace: true });
       } else {
         refetch();
         setConfirmRemoveMember(null);
@@ -152,7 +153,7 @@ const GroupDetail = () => {
     }
   };
 
-  if (loading)
+  if (loading && !data)
     return (
       <div
         style={{

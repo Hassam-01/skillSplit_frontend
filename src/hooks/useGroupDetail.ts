@@ -24,14 +24,29 @@ export interface GroupDetailData {
   totalSpending: number;
 }
 
+type GroupDetailCache = {
+  key: string;
+  data: GroupDetailData;
+};
+
+let groupDetailCache: GroupDetailCache | null = null;
+
 export function useGroupDetail(groupId: string | undefined) {
   const { user } = useAuth();
   const [data, setData] = useState<GroupDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDetail = useCallback(async () => {
+  const fetchDetail = useCallback(async (force = false) => {
     if (!user || !groupId) return;
+    const cacheKey = `${user.id}:${groupId}`;
+    if (!force && groupDetailCache?.key === cacheKey) {
+      setData(groupDetailCache.data);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -148,16 +163,46 @@ export function useGroupDetail(groupId: string | undefined) {
         allSettlements: mappedSettlements as unknown as GroupDetailData['allSettlements'],
         totalSpending,
       });
+      groupDetailCache = {
+        key: cacheKey,
+        data: {
+          id: group.id,
+          name: group.name,
+          description: group.description,
+          group_type: group.group_type,
+          invite_token: group.invite_token,
+          created_at: group.created_at,
+          members: (members ?? []).map(m => ({
+            ...m,
+            profiles: Array.isArray(m.profiles) ? m.profiles[0] : m.profiles
+          })) as unknown as GroupMember[],
+          expenses: (expenses ?? []).map(e => ({
+            ...e,
+            profiles: Array.isArray(e.profiles) ? e.profiles[0] : e.profiles,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            expense_participants: (e.expense_participants as any[] ?? []).map(ep => ({
+              ...ep,
+              profiles: Array.isArray(ep.profiles) ? ep.profiles[0] : ep.profiles
+            }))
+          })) as unknown as Expense[],
+          memberBalances,
+          pendingSettlements: pendingSettlements as unknown as GroupDetailData['pendingSettlements'],
+          allSettlements: mappedSettlements as unknown as GroupDetailData['allSettlements'],
+          totalSpending,
+        },
+      };
     } catch (err: unknown) {
       setError((err as Error).message);
     } finally {
       setLoading(false);
     }
-  }, [user, groupId]);
+  }, [user?.id, groupId]);
 
   useEffect(() => {
     fetchDetail();
   }, [fetchDetail]);
 
-  return { data, loading, error, refetch: fetchDetail };
+  const refetch = useCallback(() => fetchDetail(true), [fetchDetail]);
+
+  return { data, loading, error, refetch };
 }

@@ -69,14 +69,27 @@ function simplifyDebts(balances: NetBalance[]): { payerId: string; payeeId: stri
   return transactions;
 }
 
+type OptimizationCache = {
+  groupId: string;
+  plan: OptimizedPlan | null;
+};
+
+let optimizationCache: OptimizationCache | null = null;
+
 export function useOptimization(groupId: string | undefined) {
   const { user } = useAuth();
   const [plan, setPlan] = useState<OptimizedPlan | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchLatestPlan = useCallback(async () => {
+  const fetchLatestPlan = useCallback(async (force = false) => {
     if (!groupId) return;
+    if (!force && optimizationCache?.groupId === groupId) {
+      setPlan(optimizationCache.plan);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const { data } = await supabase
@@ -132,9 +145,11 @@ export function useOptimization(groupId: string | undefined) {
 
         const planWithDetails = { ...fetchedPlan, steps: augmentedSteps };
         setPlan(planWithDetails as unknown as OptimizedPlan);
+        optimizationCache = { groupId, plan: planWithDetails as unknown as OptimizedPlan };
       }
     } catch {
       // no plan yet
+      optimizationCache = { groupId, plan: null };
     } finally {
       setLoading(false);
     }
@@ -247,10 +262,12 @@ export function useOptimization(groupId: string | undefined) {
           }));
 
           const planWithDetails: any = { ...fetchedPlan, steps: augmentedSteps };
-          setPlan(planWithDetails as unknown as OptimizedPlan);
+          const mappedPlan = planWithDetails as unknown as OptimizedPlan;
+          setPlan(mappedPlan);
+          optimizationCache = { groupId, plan: mappedPlan };
         }
       } else {
-        await fetchLatestPlan();
+        await fetchLatestPlan(true);
       }
     } catch (err: unknown) {
       setError((err as Error).message);
@@ -265,7 +282,7 @@ export function useOptimization(groupId: string | undefined) {
       .from('optimized_plans')
       .update({ is_confirmed: true, confirmed_by: user.id, confirmed_at: new Date().toISOString() })
       .eq('id', plan.id);
-    await fetchLatestPlan();
+    await fetchLatestPlan(true);
   }, [plan, user, fetchLatestPlan]);
 
   const settleStep = useCallback(async (step: OptimizedPlanStep) => {
@@ -278,7 +295,7 @@ export function useOptimization(groupId: string | undefined) {
     if (settlement) {
       await supabase.from('optimized_plan_steps').update({ settlement_id: settlement.id }).eq('id', step.id);
     }
-    await fetchLatestPlan();
+    await fetchLatestPlan(true);
   }, [groupId, user, fetchLatestPlan]);
 
   return { plan, loading, error, fetchLatestPlan, generatePlan, confirmPlan, settleStep };
