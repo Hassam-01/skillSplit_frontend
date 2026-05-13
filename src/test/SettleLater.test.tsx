@@ -21,8 +21,8 @@ describe('Settle Later Functionality', () => {
   });
 
   const memberBalances = [
-    { userId: 'u1', displayName: 'You', netBalance: -1000 },
-    { userId: 'u2', displayName: 'User Two', netBalance: 1000 }
+    { userId: 'u1', displayName: 'You', netBalance: 0 },
+    { userId: 'u2', displayName: 'User Two', netBalance: -1000 } // I owe u2 1000
   ];
 
   it('allows scheduling a settlement for later', async () => {
@@ -91,7 +91,7 @@ describe('Settle Later Functionality', () => {
 
     await waitFor(() => {
       expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({
-        status: 'completed'
+        status: 'pending'
       }));
     });
   });

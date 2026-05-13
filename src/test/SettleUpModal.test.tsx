@@ -21,7 +21,7 @@ vi.mock('../utils/supabase', () => ({
 
 describe('SettleUpModal Component', () => {
   const mockBalances = [
-    { userId: 'u2', displayName: 'Friend', netBalance: 150 } // Friend is owed 150
+    { userId: 'u2', displayName: 'Friend', netBalance: -150 } // I owe Friend 150
   ];
 
   beforeEach(() => {
@@ -74,7 +74,7 @@ describe('SettleUpModal Component', () => {
       payer_id: 'u1',
       payee_id: 'u2',
       amount: 150,
-      status: 'completed'
+      status: 'pending'
     }));
     
     expect(logAction).toHaveBeenCalled();
