@@ -48,6 +48,9 @@ describe('useExpenses hook', () => {
       if (table === 'settlements') {
         return { select: settlementsSelectMock } as any;
       }
+      if (table === 'notifications') {
+        return createChain({ count: 2 });
+      }
       if (table === 'disputes') {
         return createChain({ count: 0 });
       }
@@ -70,6 +73,7 @@ describe('useExpenses hook', () => {
       totalBalance: 50,
       groupCount: 1,
       pendingSettlementsCount: 1,
+      unreadNotificationsCount: 2,
       openDisputesCount: 0,
     });
   });
