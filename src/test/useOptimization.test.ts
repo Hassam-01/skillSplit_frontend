@@ -23,81 +23,77 @@ describe('useOptimization hook', () => {
   });
 
   it('should simplify debts correctly and generate a plan', async () => {
-    // Setup the complex mock
-    // 1. expenses: user1 paid 100, user2 and user3 each owe 50 to user1
-    // 2. members: user1, user2, user3
-    // 3. settlements: none
-    
-    // We expect: user1 has net +100, user2 has net -50, user3 has net -50
-    // simplifyDebts should create two steps: user2 -> user1 (50) and user3 -> user1 (50)
-    
-    const mockSelect = vi.fn().mockReturnThis();
-    const mockEq = vi.fn().mockReturnThis();
-    const mockIs = vi.fn().mockReturnThis();
-    const mockOrder = vi.fn().mockReturnThis();
-    const mockLimit = vi.fn().mockReturnThis();
-    const mockSingle = vi.fn().mockReturnThis();
-    const mockInsert = vi.fn().mockReturnThis();
+    // Setup: user1 paid 100, user2 and user3 each owe 50 to user1
+    // Expected: user2 -> user1 (50) and user3 -> user1 (50)
+
+    const createChain = (finalResult: any) => {
+      const chain: any = Promise.resolve(finalResult);
+      ['select', 'eq', 'in', 'is', 'or', 'order', 'limit', 'single', 'insert', 'update', 'then'].forEach(m => {
+        if (m === 'then') {
+          // Keep the native then so await works
+        } else {
+          chain[m] = vi.fn(() => chain);
+        }
+      });
+      return chain;
+    };
+
+    const calledTables: string[] = [];
 
     vi.mocked(supabase.from).mockImplementation((table: string) => {
-      const chain = { select: mockSelect, eq: mockEq, is: mockIs, order: mockOrder, limit: mockLimit, single: mockSingle, insert: mockInsert };
-      
+      calledTables.push(table);
+
       if (table === 'expenses') {
-        chain.is = vi.fn().mockResolvedValue({
-          data: [
-            {
-              id: 'e1',
-              paid_by: 'user1',
-              expense_participants: [
-                { user_id: 'user2', share_amount: 50 },
-                { user_id: 'user3', share_amount: 50 }
-              ]
-            }
-          ]
+        return createChain({
+          data: [{
+            id: 'e1',
+            paid_by: 'user1',
+            description: 'Dinner',
+            expense_participants: [
+              { user_id: 'user2', share_amount: 50, is_payer: false },
+              { user_id: 'user3', share_amount: 50, is_payer: false }
+            ],
+            disputes: []
+          }]
         });
-      } else if (table === 'group_members') {
-        chain.eq = vi.fn().mockResolvedValue({
+      }
+      if (table === 'group_members') {
+        return createChain({
           data: [
             { user_id: 'user1', profiles: { id: 'user1', display_name: 'User One' } },
             { user_id: 'user2', profiles: { id: 'user2', display_name: 'User Two' } },
             { user_id: 'user3', profiles: { id: 'user3', display_name: 'User Three' } },
           ]
         });
-      } else if (table === 'settlements') {
-        chain.eq = vi.fn().mockReturnThis();
-        // Since we chain eq('group_id').eq('status'), the second eq needs to return the promise
-        chain.eq = vi.fn().mockImplementation((col) => {
-          if (col === 'status') return Promise.resolve({ data: [] });
-          return chain;
-        });
-      } else if (table === 'optimized_plans') {
-        chain.single = vi.fn().mockResolvedValue({
-          data: { id: 'plan1', group_id: 'group1' },
+      }
+      if (table === 'settlements') {
+        return createChain({ data: [] });
+      }
+      if (table === 'optimized_plans') {
+        return createChain({
+          data: { id: 'plan1', group_id: 'group1', naive_count: 2, optimized_count: 2, is_confirmed: false, optimized_plan_steps: [] },
           error: null
         });
-        chain.insert = vi.fn().mockReturnThis();
-      } else if (table === 'optimized_plan_steps') {
-        chain.insert = vi.fn().mockResolvedValue({ error: null });
       }
-
-      return chain as any;
+      if (table === 'optimized_plan_steps') {
+        return createChain({ error: null });
+      }
+      return createChain({ data: [] });
     });
 
     const { result } = renderHook(() => useOptimization('group1'));
 
     await waitFor(() => {
-      // it calls fetchLatestPlan on mount, wait for it to finish loading
       expect(result.current.loading).toBe(false);
     });
 
     // Now trigger generatePlan
     await result.current.generatePlan();
 
-    // Verify optimized_plans insert
-    expect(supabase.from).toHaveBeenCalledWith('optimized_plans');
-    
-    // We can inspect the calls to optimized_plan_steps insert to see the algorithm output
-    const stepsInsertMock = vi.mocked(supabase.from).mock.calls.find(c => c[0] === 'optimized_plan_steps');
-    expect(stepsInsertMock).toBeDefined();
+    // Verify key tables were queried during generatePlan
+    expect(calledTables).toContain('expenses');
+    expect(calledTables).toContain('settlements');
+    expect(calledTables).toContain('optimized_plans');
+    expect(calledTables).toContain('optimized_plan_steps');
   });
 });
