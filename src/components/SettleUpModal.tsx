@@ -28,8 +28,8 @@ const SettleUpModal: React.FC<SettleUpModalProps> = ({ isOpen, onClose, onSettle
 
   if (!isOpen) return null;
 
-  // Only show members who are owed money (positive balance)
-  const membersYouOwe = memberBalances.filter(m => m.netBalance > 0.01);
+  // Only show members who are owed money (negative balance for me means I owe them)
+  const membersYouOwe = memberBalances.filter(m => m.netBalance < -0.01);
   const selected = memberBalances.find(m => m.userId === selectedMemberId);
 
   const handleSettle = async (e: React.FormEvent) => {
@@ -45,7 +45,7 @@ const SettleUpModal: React.FC<SettleUpModalProps> = ({ isOpen, onClose, onSettle
         amount: parseFloat(amount),
         payment_method: paymentMethod,
         notes: notes.trim() || null,
-        status: isSettleLater ? 'pending' : 'completed',
+        status: 'pending', // Both immediate and scheduled start as pending for verification
         due_date: isSettleLater ? dueDate : null,
       });
       if (sErr) throw sErr;
@@ -57,8 +57,10 @@ const SettleUpModal: React.FC<SettleUpModalProps> = ({ isOpen, onClose, onSettle
       await supabase.from('notifications').insert({
         user_id: selectedMemberId,
         type: 'settlement_pending',
-        title: 'Settlement marked',
-        body: `${payerName} marked Rs. ${parseFloat(amount).toLocaleString()} as paid. Please verify.`,
+        title: isSettleLater ? 'Payment Scheduled' : 'Settlement marked',
+        body: isSettleLater 
+          ? `${payerName} scheduled a payment of Rs. ${parseFloat(amount).toLocaleString()} for ${new Date(dueDate).toLocaleDateString()}.`
+          : `${payerName} marked Rs. ${parseFloat(amount).toLocaleString()} as paid. Please verify.`,
         related_id: groupId,
       });
 

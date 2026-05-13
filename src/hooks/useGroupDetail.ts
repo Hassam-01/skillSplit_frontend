@@ -116,7 +116,7 @@ export function useGroupDetail(groupId: string | undefined) {
         profiles: Array.isArray(s.profiles) ? s.profiles[0] : s.profiles
       }));
 
-      const confirmedSettlements = mappedSettlements.filter(s => s.status === 'confirmed');
+      const confirmedSettlements = mappedSettlements.filter(s => s.status === 'confirmed' || s.status === 'completed');
       const pendingSettlements = mappedSettlements.filter(s => s.status === 'pending');
 
       confirmedSettlements.forEach(s => {

@@ -3,10 +3,12 @@ import { Bell, BellOff, CheckCircle2, Clock, Loader, AlertCircle } from 'lucide-
 import { supabase } from '../utils/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Notification } from '../types/database';
+import SettlementVerification from '../components/SettlementVerification';
 
 const NotificationsPage = () => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [pendingSettlements, setPendingSettlements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,6 +24,15 @@ const NotificationsPage = () => {
 
       if (nErr) throw nErr;
       setNotifications(data || []);
+
+      // Also fetch pending settlements that need verification
+      const { data: sData } = await supabase
+        .from('settlements')
+        .select('*, profiles!settlements_payer_id_fkey(display_name)')
+        .eq('payee_id', user.id)
+        .eq('status', 'pending');
+      
+      setPendingSettlements(sData || []);
     } catch (err: unknown) {
       setError((err as Error).message);
     } finally {
@@ -95,15 +106,30 @@ const NotificationsPage = () => {
           <Loader size={40} className="animate-spin" style={{ color: 'var(--color-primary)', opacity: 0.5 }} />
           <p style={{ marginTop: '1rem', color: 'var(--color-on-surface-variant)' }}>Fetching notifications…</p>
         </div>
-      ) : notifications.length === 0 ? (
-        <div className="surface-lowest" style={{ textAlign: 'center', padding: '5rem 2rem', borderRadius: 'var(--radius-xl)' }}>
-          <BellOff size={48} style={{ margin: '0 auto 1.5rem', opacity: 0.2 }} />
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>All Caught Up!</h3>
-          <p style={{ color: 'var(--color-on-surface-variant)' }}>You don't have any notifications at the moment.</p>
-        </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {notifications.map(n => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {pendingSettlements.length > 0 && (
+            <section>
+              <h3 className="text-title-md" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <CheckCircle2 size={18} color="var(--color-primary)" /> Action Required
+              </h3>
+              <SettlementVerification 
+                settlements={pendingSettlements} 
+                onAction={fetchNotifications} 
+              />
+            </section>
+          )}
+
+          {notifications.length === 0 && pendingSettlements.length === 0 ? (
+            <div className="surface-lowest" style={{ textAlign: 'center', padding: '5rem 2rem', borderRadius: 'var(--radius-xl)' }}>
+              <BellOff size={48} style={{ margin: '0 auto 1.5rem', opacity: 0.2 }} />
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>All Caught Up!</h3>
+              <p style={{ color: 'var(--color-on-surface-variant)' }}>You don't have any notifications at the moment.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <h3 className="text-title-md" style={{ marginBottom: '0.5rem', color: 'var(--color-on-surface-variant)' }}>Recent Notifications</h3>
+              {notifications.map(n => (
             <div 
               key={n.id} 
               className="surface-lowest" 
@@ -160,8 +186,10 @@ const NotificationsPage = () => {
               </div>
             </div>
           ))}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
+    )}
     </div>
   );
 };

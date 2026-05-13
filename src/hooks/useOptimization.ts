@@ -138,10 +138,32 @@ export function useOptimization(groupId: string | undefined) {
         const fetchedPlan = data as any;
         const rawSteps = fetchedPlan.optimized_plan_steps ?? fetchedPlan.steps ?? [];
 
-        const augmentedSteps = (rawSteps as any[]).map((step: any) => ({
-          ...step,
-          details: buildStepDetails(step, originalDebts, memberMap),
-        }));
+        // Auto-link existing settlements to unlinked optimization steps
+        const { data: groupSettlements } = await supabase
+          .from('settlements')
+          .select('id, payer_id, payee_id, status')
+          .eq('group_id', groupId)
+          .in('status', ['pending', 'confirmed', 'completed']);
+
+        const augmentedSteps = (rawSteps as any[]).map((step: any) => {
+          let settlementId = step.settlement_id;
+          // If step has no linked settlement, try to find a matching one
+          if (!settlementId && groupSettlements) {
+            const match = groupSettlements.find(
+              s => s.payer_id === step.payer_id && s.payee_id === step.payee_id
+            );
+            if (match) {
+              settlementId = match.id;
+              // Fire-and-forget: update the step in DB to link it
+              supabase.from('optimized_plan_steps').update({ settlement_id: match.id }).eq('id', step.id).then(() => {});
+            }
+          }
+          return {
+            ...step,
+            settlement_id: settlementId,
+            details: buildStepDetails(step, originalDebts, memberMap),
+          };
+        });
 
         const planWithDetails = { ...fetchedPlan, steps: augmentedSteps };
         setPlan(planWithDetails as unknown as OptimizedPlan);
@@ -204,7 +226,7 @@ export function useOptimization(groupId: string | undefined) {
         .from('settlements')
         .select('payer_id, payee_id, amount')
         .eq('group_id', groupId)
-        .eq('status', 'confirmed');
+        .in('status', ['confirmed', 'completed']);
       settlements?.forEach(s => {
         if (!netMap[s.payer_id]) netMap[s.payer_id] = 0;
         if (!netMap[s.payee_id]) netMap[s.payee_id] = 0;
@@ -287,15 +309,41 @@ export function useOptimization(groupId: string | undefined) {
 
   const settleStep = useCallback(async (step: OptimizedPlanStep) => {
     if (!groupId || !user) return;
-    const { data: settlement } = await supabase
-      .from('settlements')
-      .insert({ group_id: groupId, payer_id: step.payer_id, payee_id: step.payee_id, amount: step.amount, status: 'pending' })
-      .select()
-      .single();
-    if (settlement) {
-      await supabase.from('optimized_plan_steps').update({ settlement_id: settlement.id }).eq('id', step.id);
+    setLoading(true);
+    try {
+      // Check if there's already a matching pending/confirmed settlement for this pair
+      const { data: existing } = await supabase
+        .from('settlements')
+        .select('id')
+        .eq('group_id', groupId)
+        .eq('payer_id', step.payer_id)
+        .eq('payee_id', step.payee_id)
+        .in('status', ['pending', 'confirmed', 'completed'])
+        .limit(1);
+
+      let settlementId: string;
+
+      if (existing && existing.length > 0) {
+        // Link the existing settlement to this optimization step
+        settlementId = existing[0].id;
+      } else {
+        // Create a new settlement
+        const { data: settlement } = await supabase
+          .from('settlements')
+          .insert({ group_id: groupId, payer_id: step.payer_id, payee_id: step.payee_id, amount: step.amount, status: 'pending' })
+          .select()
+          .single();
+        if (!settlement) throw new Error('Failed to create settlement');
+        settlementId = settlement.id;
+      }
+
+      await supabase.from('optimized_plan_steps').update({ settlement_id: settlementId }).eq('id', step.id);
+      await fetchLatestPlan(true);
+    } catch (err: unknown) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
     }
-    await fetchLatestPlan(true);
   }, [groupId, user, fetchLatestPlan]);
 
   return { plan, loading, error, fetchLatestPlan, generatePlan, confirmPlan, settleStep };

@@ -9,6 +9,7 @@ export interface DashboardStats {
   youOwe: number;
   groupCount: number;
   pendingSettlementsCount: number;
+  unreadNotificationsCount: number;
   openDisputesCount: number;
 }
 
@@ -25,7 +26,7 @@ export function useExpenses() {
   const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     totalBalance: 0, youAreOwed: 0, youOwe: 0,
-    groupCount: 0, pendingSettlementsCount: 0, openDisputesCount: 0,
+    groupCount: 0, pendingSettlementsCount: 0, unreadNotificationsCount: 0, openDisputesCount: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -99,12 +100,19 @@ export function useExpenses() {
       }
       const { data: recent } = await recentQuery;
 
-      // Pending settlements count
+      // Pending settlements count (only those where I am the payee and need to verify)
       const { count: pendingCount } = await supabase
         .from('settlements')
         .select('id', { count: 'exact', head: true })
-        .or(`payer_id.eq.${user.id},payee_id.eq.${user.id}`)
+        .eq('payee_id', user.id)
         .eq('status', 'pending');
+
+      // Unread notifications count
+      const { count: unreadCount } = await supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
 
       // Open disputes count
       const { count: disputeCount } = await supabase
@@ -118,6 +126,7 @@ export function useExpenses() {
         totalBalance: youAreOwed - youOwe,
         groupCount: groupIds.length,
         pendingSettlementsCount: pendingCount ?? 0,
+        unreadNotificationsCount: unreadCount ?? 0,
         openDisputesCount: disputeCount ?? 0,
       });
       const mappedRecent = (recent ?? []) as unknown as Expense[];
@@ -127,6 +136,7 @@ export function useExpenses() {
         totalBalance: youAreOwed - youOwe,
         groupCount: groupIds.length,
         pendingSettlementsCount: pendingCount ?? 0,
+        unreadNotificationsCount: unreadCount ?? 0,
         openDisputesCount: disputeCount ?? 0,
       };
 

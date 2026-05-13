@@ -41,7 +41,7 @@ const Dashboard = () => {
           <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.55rem 0.9rem' }} onClick={() => navigate('/notifications')}>
             <div style={{ position: 'relative' }}>
               <Bell size={18} />
-              {stats.pendingSettlementsCount > 0 && (
+              {(stats.pendingSettlementsCount > 0 || stats.unreadNotificationsCount > 0) && (
                 <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '8px', height: '8px', backgroundColor: 'var(--color-error)', borderRadius: '50%' }} />
               )}
             </div>
